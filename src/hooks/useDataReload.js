@@ -10,6 +10,7 @@ export const useDataReload = () => {
   const reloadData = useCallback(async () => {
     if (user) {
       try {
+        window.location.reload();
         const notes = await fetchUserNotes(user.uid);
         updateNotes(notes);
       } catch (error) {
