@@ -2,6 +2,75 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Add these styles to your CSS file */
+
+.container {
+  @apply gap-1;
+  transition: margin-left 0.3s ease-in-out, max-width 0.3s ease-in-out;
+  max-width: 74rem;
+}
+
+/* Ensure the directory doesn't push content on smaller screens */
+@media (max-width: 767px) {
+  .directory-open .container,
+  .directory-closed .container {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Adjust the directory styles */
+.directory {
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.375rem;
+  min-height: 3rem; /* Minimum height when all categories are collapsed */
+  max-height: calc(100vh - 5rem); /* Maximum height, adjust based on your layout */
+  overflow-y: auto;
+  transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out, height 0.3s ease-in-out;
+}
+
+.directory-open .directory {
+  width: 16rem;
+  opacity: 1;
+}
+
+.directory-closed .directory {
+  width: 0;
+  opacity: 0;
+  height: 3rem; /* Collapse to minimum height when closed */
+  overflow: hidden;
+}
+
+/* Style for the directory content */
+.directory-content {
+  padding: 1rem;
+  background-color: var(--color-bg-primary);
+}
+
+/* Style for category buttons */
+.category-button {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.category-button:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+/* Style for category items */
+.category-items {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.category-items.expanded {
+  max-height: 1000px; /* Adjust this value based on your needs */
+}
+
 :root {
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f6f8fa;
@@ -25,10 +94,6 @@
 body {
   @apply bg-white;
   color: var(--color-text-primary);
-}
-
-.container {
-  max-width: 75rem;
 }
 
 .card {

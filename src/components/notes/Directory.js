@@ -1,18 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Directory = ({ notes, onClose, isOpen }) => {
   const [expandedCategories, setExpandedCategories] = useState([]);
-  const [contentHeight, setContentHeight] = useState('auto');
-  const contentRef = useRef(null);
   const location = useLocation();
-
-  useEffect(() => {
-    if (contentRef.current) {
-      setContentHeight(contentRef.current.scrollHeight + 'px');
-    }
-  }, [expandedCategories, notes, isOpen]);
 
   const toggleCategory = (category) => {
     setExpandedCategories(prev => 
@@ -25,7 +17,7 @@ const Directory = ({ notes, onClose, isOpen }) => {
   const categories = [...new Set(notes.map(note => note.category))];
 
   return (
-    <div className="directory-container bg-white h-full overflow-y-auto relative flex flex-col">
+    <div className={`directory ${isOpen ? 'directory-open' : 'directory-closed'}`}>
       <div className="sticky top-0 bg-white z-10 p-4 border-b flex justify-between items-center">
         <h2 className="text-lg font-bold">Directory</h2>
         <button
@@ -36,15 +28,11 @@ const Directory = ({ notes, onClose, isOpen }) => {
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div 
-        ref={contentRef}
-        className="flex-grow p-4 overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ height: isOpen ? contentHeight : '0px' }}
-      >
+      <div className="directory-content">
         {categories.map(category => (
           <div key={category} className="mb-2">
             <button 
-              className="flex items-center w-full text-left"
+              className="category-button flex items-center"
               onClick={() => toggleCategory(category)}
             >
               {expandedCategories.includes(category) ? (
@@ -54,7 +42,7 @@ const Directory = ({ notes, onClose, isOpen }) => {
               )}
               {category}
             </button>
-            {expandedCategories.includes(category) && (
+            <div className={`category-items ${expandedCategories.includes(category) ? 'expanded' : ''}`}>
               <ul className="pl-4">
                 {notes
                   .filter(note => note.category === category)
@@ -71,7 +59,7 @@ const Directory = ({ notes, onClose, isOpen }) => {
                   ))
                 }
               </ul>
-            )}
+            </div>
           </div>
         ))}
       </div>

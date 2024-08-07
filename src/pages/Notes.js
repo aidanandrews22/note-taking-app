@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDataContext } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +26,18 @@ const Notes = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isPreview, setIsPreview] = useState(false);
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const directoryRef = useRef(null);
+
+  const checkScreenSize = useCallback(() => {
+    setIsSmallScreen(window.innerWidth < 768); // Adjust this value as needed
+  }, []);
+
+  useEffect(() => {
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, [checkScreenSize]);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -40,10 +51,8 @@ const Notes = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (directoryRef.current && !directoryRef.current.contains(event.target) && !event.target.closest('button[aria-label="Toggle directory"]')) {
-        if (location.pathname !== '/notes') {
-          setIsDirectoryOpen(false);
-        }
+      if (isSmallScreen && isDirectoryOpen && directoryRef.current && !directoryRef.current.contains(event.target) && !event.target.closest('button[aria-label="Toggle directory"]')) {
+        setIsDirectoryOpen(false);
       }
     };
 
@@ -51,16 +60,15 @@ const Notes = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [location]);
+  }, [isSmallScreen, isDirectoryOpen]);
 
   useEffect(() => {
-    // Automatically open directory on note list page
     if (location.pathname === '/notes') {
-      setIsDirectoryOpen(true);
+      setIsDirectoryOpen(!isSmallScreen);
     } else {
       setIsDirectoryOpen(false);
     }
-  }, [location]);
+  }, [location, isSmallScreen]);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -100,16 +108,14 @@ const Notes = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header toggleDirectory={toggleDirectory} isDirectoryOpen={isDirectoryOpen} />
-      <div className="flex flex-grow container mt-10 mx-auto px-4">
+      <div className={`py-8 flex flex-grow relative ${isDirectoryOpen ? 'directory-open' : 'directory-closed'}`}>
         <div 
           ref={directoryRef}
           className={`
-            fixed md:relative md:w-64
-            top-0 left-0 bg-white z-20
+            ${isSmallScreen ? 'fixed' : 'relative'} z-20
             transition-all duration-300 ease-in-out
-            ${isDirectoryOpen ? 'translate-x-0' : '-translate-x-full'}
-            max-w-xs rounded-lg shadow-lg
-            ${isDirectoryOpen ? 'mt-4 ml-4 mb-4' : 'mt-4 -ml-64'}
+            ${isDirectoryOpen ? 'w-64 opacity-100' : 'w-0 opacity-0'}
+            overflow-hidden
           `}
         >
           <Directory 
@@ -118,46 +124,48 @@ const Notes = () => {
             isOpen={isDirectoryOpen}
           />
         </div>
-        <div className={`flex-grow transition-all duration-300 ease-in-out ${isDirectoryOpen ? 'md:ml-4' : 'ml-0'}`}>
-          {isListView && (
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">My Notes</h2>
-              <div className="space-x-2">
-                <button
-                  onClick={reloadData}
-                  className="btn btn-secondary btn-icon"
-                  title="Reload Data"
-                >
-                  <RefreshCcw className="h-5 w-5" />
-                </button>
-                <Link 
-                  to="/notes/new" 
-                  className="btn btn-primary btn-icon"
-                  title="New Note"
-                >
-                  <PlusCircle className="h-5 w-5" />
-                </Link>
+        <div className="flex-grow overflow-x-hidden">
+          <div className="container mx-auto px-4">
+            {isListView && (
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">My Notes</h2>
+                <div className="space-x-2">
+                  <button
+                    onClick={reloadData}
+                    className="btn btn-secondary btn-icon"
+                    title="Reload Data"
+                  >
+                    <RefreshCcw className="h-5 w-5" />
+                  </button>
+                  <Link 
+                    to="/notes/new" 
+                    className="btn btn-primary btn-icon"
+                    title="New Note"
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </Link>
+                </div>
               </div>
-            </div>
-          )}
-          {viewMode === 'list' ? (
-            <Routes>
-              <Route index element={<NoteList userId={user.uid} isAdmin={isAdmin} />} />
-              <Route path=":noteId" element={<NoteView userId={user.uid} isAdmin={isAdmin} />} />
-              <Route path=":noteId/edit" element={
-                isPreview ? 
-                  <Preview doc={notes.find(n => n.id === location.pathname.split('/')[2])?.content || ''} /> :
-                  <NoteEdit userId={user.uid} isAdmin={isAdmin} onTogglePreview={toggleViewMode} />
-              } />
-              <Route path="new" element={<NoteEdit userId={user.uid} isAdmin={isAdmin} onTogglePreview={toggleViewMode} />} />
-            </Routes>
-          ) : (
-            <GraphView 
-              data={graphData} 
-              type="notes"
-              onNodeClick={handleCategoryClick}
-            />
-          )}
+            )}
+            {viewMode === 'list' ? (
+              <Routes>
+                <Route index element={<NoteList userId={user.uid} isAdmin={isAdmin} />} />
+                <Route path=":noteId" element={<NoteView userId={user.uid} isAdmin={isAdmin} />} />
+                <Route path=":noteId/edit" element={
+                  isPreview ? 
+                    <Preview doc={notes.find(n => n.id === location.pathname.split('/')[2])?.content || ''} /> :
+                    <NoteEdit userId={user.uid} isAdmin={isAdmin} onTogglePreview={toggleViewMode} />
+                } />
+                <Route path="new" element={<NoteEdit userId={user.uid} isAdmin={isAdmin} onTogglePreview={toggleViewMode} />} />
+              </Routes>
+            ) : (
+              <GraphView 
+                data={graphData} 
+                type="notes"
+                onNodeClick={handleCategoryClick}
+              />
+            )}
+          </div>
         </div>
         <button
           className="fixed bottom-4 right-4 btn btn-primary btn-icon rounded-full shadow-lg"
