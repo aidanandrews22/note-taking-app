@@ -1,0 +1,56 @@
+import { getDatabase, ref, get, set, push, remove } from "firebase/database";
+import { app } from '../firebase';
+
+const db = getDatabase(app);
+
+export const fetchUserNotes = async (userId) => {
+  const privateNotesRef = ref(db, `notes/private/${userId}`);
+  const publicNotesRef = ref(db, 'notes/public');
+  
+  const [privateSnapshot, publicSnapshot] = await Promise.all([
+    get(privateNotesRef),
+    get(publicNotesRef)
+  ]);
+
+  const privateNotes = privateSnapshot.exists() 
+    ? Object.entries(privateSnapshot.val()).map(([id, note]) => ({ id, ...note, isPublic: false }))
+    : [];
+
+  const publicNotes = publicSnapshot.exists()
+    ? Object.entries(publicSnapshot.val()).map(([id, note]) => ({ id, ...note, isPublic: true }))
+    : [];
+
+  return [...privateNotes, ...publicNotes];
+};
+
+export const saveNote = async (userId, noteId, noteData) => {
+  const { isPublic, ...data } = noteData;
+  const notePath = isPublic 
+    ? `notes/public/${noteId || `note${Date.now()}`}`
+    : `notes/private/${userId}/${noteId || `note${Date.now()}`}`;
+  
+  const noteRef = ref(db, notePath);
+  
+  if (!noteId) {
+    const newNoteRef = push(noteRef);
+    await set(newNoteRef, { ...data, userId });
+    return newNoteRef.key;
+  } else {
+    await set(noteRef, { ...data, userId });
+    return noteId;
+  }
+};
+
+export const deleteNote = async (userId, noteId, isPublic) => {
+  const notePath = isPublic 
+    ? `notes/public/${noteId}`
+    : `notes/private/${userId}/${noteId}`;
+  const noteRef = ref(db, notePath);
+  await remove(noteRef);
+};
+
+export const isUserAdmin = async (userId) => {
+  const adminRef = ref(db, `admins/${userId}`);
+  const snapshot = await get(adminRef);
+  return snapshot.exists();
+};
