@@ -1,4 +1,4 @@
-import { getDatabase, ref, get, set, push, remove } from "firebase/database";
+import { getDatabase, ref, get, set, remove } from "firebase/database";
 import { app } from '../firebase';
 
 const db = getDatabase(app);
@@ -25,20 +25,38 @@ export const fetchUserNotes = async (userId) => {
 
 export const saveNote = async (userId, noteId, noteData) => {
   const { isPublic, ...data } = noteData;
-  const notePath = isPublic 
-    ? `notes/public/${noteId || `note${Date.now()}`}`
-    : `notes/private/${userId}/${noteId || `note${Date.now()}`}`;
-  
-  const noteRef = ref(db, notePath);
-  
-  if (!noteId) {
-    const newNoteRef = push(noteRef);
-    await set(newNoteRef, { ...data, userId });
-    return newNoteRef.key;
+  const now = new Date();
+  const lastEdited = now.getTime();
+  const formattedDate = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+
+  let notePath;
+  let newNoteId;
+
+  if (isPublic) {
+    notePath = `notes/public`;
   } else {
-    await set(noteRef, { ...data, userId });
-    return noteId;
+    notePath = `notes/private/${userId}`;
   }
+
+  if (!noteId) {
+    // Creating a new note
+    newNoteId = `note${now.getTime()}`;
+    noteId = newNoteId;
+  }
+
+  const noteRef = ref(db, `${notePath}/${noteId}`);
+
+  const updatedData = {
+    ...data,
+    userId,
+    id: noteId,
+    date: formattedDate,
+    lastEdited
+  };
+
+  await set(noteRef, updatedData);
+
+  return noteId;
 };
 
 export const deleteNote = async (userId, noteId, isPublic) => {
