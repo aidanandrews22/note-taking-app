@@ -221,6 +221,7 @@ body {
 
 .preview-container {
   padding: 1rem;
+  padding-top: 4px;
 }
 
 /* Ensure CodeMirror takes full height of its container */
@@ -231,6 +232,8 @@ body {
 /* Markdown-specific styles */
 .preview.markdown-body pre {
   @apply bg-gray-100 rounded-md;
+  padding: 0;
+  overflow: unset
 }
 
 .preview.markdown-body code {
@@ -244,6 +247,7 @@ body {
 .preview.markdown-body h5,
 .preview.markdown-body h6 {
   @apply border-b border-gray-200 pb-2 mb-4;
+  margin-top: 0;
 }
 
 .preview.markdown-body blockquote {
@@ -253,6 +257,11 @@ body {
 .preview.markdown-body ul,
 .preview.markdown-body ol {
   @apply pl-8;
+  margin: 0.25em 0; /* Match the margin we set for .cm-line */
+}
+
+.preview.markdown-body li {
+  margin: 0.25em 0; /* Ensure individual list items have the same spacing */
 }
 
 .preview.markdown-body table {

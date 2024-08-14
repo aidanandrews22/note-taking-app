@@ -17,10 +17,27 @@ export const transparentTheme = EditorView.theme({
 });
 
 const customSyntaxHighlighting = HighlightStyle.define([
-  { tag: tags.heading1, fontSize: '1.6em', fontWeight: 'bold' },
-  { tag: tags.heading2, fontSize: '1.4em', fontWeight: 'bold' },
-  { tag: tags.heading3, fontSize: '1.2em', fontWeight: 'bold' },
+  { tag: tags.heading1, fontSize: '2em', fontWeight: 'bold' },
+  { tag: tags.heading2, fontSize: '1.5em', fontWeight: 'bold' },
+  { tag: tags.heading3, fontSize: '1.17em', fontWeight: 'bold' },
+  { tag: tags.heading4, fontSize: '1em', fontWeight: 'bold' },
+  { tag: tags.heading5, fontSize: '0.83em', fontWeight: 'bold' },
+  { tag: tags.heading6, fontSize: '0.67em', fontWeight: 'bold' },
 ]);
+
+const markdownStyling = EditorView.baseTheme({
+  '.cm-content': {
+    fontSize: '16px',
+    lineHeight: '1.5',
+  },
+  '.cm-line': {
+    padding: '0 2px 0 6px',
+  },
+  '.cm-formatting-list': {
+    display: 'inline-block',
+    width: '1em', // Adjust if necessary to match the indentation of list items in preview
+  },
+});
 
 interface Props {
   initialDoc: string;
@@ -54,6 +71,7 @@ const useCodeMirror = <T extends Element>(props: Props): [React.RefObject<T>, Ed
         }),
         lightTheme,
         transparentTheme,
+        markdownStyling,
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
           if (update.docChanged && onChange) {
@@ -72,7 +90,7 @@ const useCodeMirror = <T extends Element>(props: Props): [React.RefObject<T>, Ed
     return () => {
       view.destroy();
     };
-  }, [refContainer]); // Remove props.initialDoc and onChange from dependencies
+  }, [refContainer]);
 
   return [refContainer, editorView];
 };
