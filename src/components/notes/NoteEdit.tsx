@@ -62,7 +62,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
       const savedNoteId = await saveNote(userId, noteId === 'new' ? null : noteId, note);
       const updatedNotes = await fetchUserNotes(userId);
       updateNotes(updatedNotes);
-      navigate(`/notes/${savedNoteId}`);
+      navigate(note.category === 'Todo' ? '/todos' : `/notes/${savedNoteId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -106,6 +106,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
           <option value="Misc">Misc</option>
           <option value="Work">Work</option>
           <option value="Personal">Personal</option>
+          <option value="Todo">Todo</option>
         </select>
       </div>
       <div className="flex justify-between mb-2">

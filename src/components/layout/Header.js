@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { Home, LogOut, User, ChevronDown, Menu } from 'lucide-react';
+import { Home, LogOut, User, ChevronDown, Menu, CheckSquare } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Header = ({ toggleDirectory, isDirectoryOpen }) => {
@@ -15,8 +15,6 @@ const Header = ({ toggleDirectory, isDirectoryOpen }) => {
       console.error('Error signing out: ', error);
     });
   };
-
-  const isListView = location.pathname === '/notes';
 
   return (
     <header className="header text-black p-4 bg-white shadow-md">
@@ -31,11 +29,15 @@ const Header = ({ toggleDirectory, isDirectoryOpen }) => {
           </button>
           <Link to="/" className="flex items-center">
             <Home className="h-6 w-6 mr-2" />
-            <span className="text-2xl font-bold hidden md:inline">Aidan Andrews Notes</span>
+            <span className="text-2xl font-bold hidden md:inline">Aidan Andrews App</span>
           </Link>
         </div>
         {user && (
           <div className="flex items-center">
+            <Link to="/todos" className="mr-4 flex items-center">
+              <CheckSquare className="h-6 w-6 mr-2" />
+              <span className="hidden md:inline">Todos</span>
+            </Link>
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}

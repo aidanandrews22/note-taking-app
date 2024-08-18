@@ -12,10 +12,9 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import Preview from '../components/markdown/Preview';
 import Directory from '../components/notes/Directory';
-import Header from '../components/layout/Header';
 import { PlusCircle, RefreshCcw, BarChart2, Edit } from 'lucide-react';
 
-const Notes = () => {
+const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
   const { notes, loading, error } = useDataContext();
   const { user } = useAuth();
   const reloadData = useDataReload();
@@ -25,12 +24,11 @@ const Notes = () => {
   const [viewMode, setViewMode] = useState('list');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isPreview, setIsPreview] = useState(false);
-  const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const directoryRef = useRef(null);
 
   const checkScreenSize = useCallback(() => {
-    setIsSmallScreen(window.innerWidth < 768); // Adjust this value as needed
+    setIsSmallScreen(window.innerWidth < 768);
   }, []);
 
   useEffect(() => {
@@ -48,27 +46,6 @@ const Notes = () => {
     };
     checkAdminStatus();
   }, [user]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isSmallScreen && isDirectoryOpen && directoryRef.current && !directoryRef.current.contains(event.target) && !event.target.closest('button[aria-label="Toggle directory"]')) {
-        setIsDirectoryOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isSmallScreen, isDirectoryOpen]);
-
-  useEffect(() => {
-    if (location.pathname === '/notes') {
-      setIsDirectoryOpen(!isSmallScreen);
-    } else {
-      setIsDirectoryOpen(false);
-    }
-  }, [location, isSmallScreen]);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -89,10 +66,6 @@ const Notes = () => {
     setSelectedCategory(category === selectedCategory ? null : category);
   };
 
-  const toggleDirectory = () => {
-    setIsDirectoryOpen(!isDirectoryOpen);
-  };
-
   const filteredNotes = selectedCategory
     ? notes.filter(note => note.category === selectedCategory)
     : notes;
@@ -107,7 +80,6 @@ const Notes = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header toggleDirectory={toggleDirectory} isDirectoryOpen={isDirectoryOpen} />
       <div className={`py-8 flex flex-grow relative ${isDirectoryOpen ? 'directory-open' : 'directory-closed'}`}>
         <div 
           ref={directoryRef}
