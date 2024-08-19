@@ -1,6 +1,5 @@
-// src/context/DataContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { fetchUserNotes } from '../services/DataService';
+import { fetchUserData } from '../services/DataService';
 import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
@@ -16,11 +15,9 @@ export const DataProvider = ({ children }) => {
     const loadData = async () => {
       if (user) {
         try {
-          const fetchedNotes = await fetchUserNotes(user.uid);
-          const notesData = fetchedNotes;
-          const todosData = fetchedNotes.filter(note => note.category === 'Todo');
-          setNotes(notesData);
-          setTodos(todosData);
+          const { notes: fetchedNotes, todos: fetchedTodos } = await fetchUserData(user.uid);
+          setNotes(fetchedNotes);
+          setTodos(fetchedTodos);
         } catch (err) {
           setError(err.message);
         } finally {
@@ -33,14 +30,15 @@ export const DataProvider = ({ children }) => {
   }, [user]);
 
   const updateNotes = (newNotes) => {
-    const notesData = newNotes.filter(note => note.category !== 'Todo');
-    const todosData = newNotes.filter(note => note.category === 'Todo');
-    setNotes(notesData);
-    setTodos(todosData);
+    setNotes(newNotes);
+  };
+
+  const updateTodos = (newTodos) => {
+    setTodos(newTodos);
   };
 
   return (
-    <DataContext.Provider value={{ notes, todos, loading, error, updateNotes }}>
+    <DataContext.Provider value={{ notes, todos, loading, error, updateNotes, updateTodos }}>
       {children}
     </DataContext.Provider>
   );

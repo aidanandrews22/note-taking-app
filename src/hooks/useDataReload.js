@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useDataContext } from '../context/DataContext';
-import { fetchUserNotes } from '../services/DataService';
+import { fetchUserData } from '../services/DataService';
 import { useAuth } from '../context/AuthContext';
 
 export const useDataReload = () => {
@@ -11,8 +11,9 @@ export const useDataReload = () => {
     if (user) {
       try {
         window.location.reload();
-        const notes = await fetchUserNotes(user.uid);
+        const { notes, todos } = await fetchUserData(user.uid);
         updateNotes(notes);
+        // You might want to add a function to update todos as well
       } catch (error) {
         console.error('Error reloading data:', error);
       }

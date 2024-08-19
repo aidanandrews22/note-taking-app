@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useDataContext } from '../../context/DataContext';
-import { saveNote, fetchUserNotes, deleteNote } from '../../services/DataService';
+import { saveTodo, fetchUserData, deleteTodo } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
 import { Trash2, Edit2, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
+import moment from 'moment';
 
 const importanceColors = [
   'bg-gray-100',  // Trivial
@@ -18,7 +19,8 @@ const TodoItem = ({ todo, onMoveUp, onMoveDown, onClick }) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(todo.title);
-  const [editedDueDate, setEditedDueDate] = useState(todo.dueDate);
+  const [editedStart, setEditedStart] = useState(moment(todo.start).format('YYYY-MM-DDTHH:mm'));
+  const [editedEnd, setEditedEnd] = useState(moment(todo.end).format('YYYY-MM-DDTHH:mm'));
   const [editedImportance, setEditedImportance] = useState(todo.importance || 0);
 
   const toggleStatus = async (e) => {
@@ -27,30 +29,31 @@ const TodoItem = ({ todo, onMoveUp, onMoveDown, onClick }) => {
       ...todo,
       status: todo.status === 'completed' ? 'pending' : 'completed'
     };
-
+  
     try {
-      await saveNote(user.uid, todo.id, updatedTodo);
-      const updatedNotes = await fetchUserNotes(user.uid);
-      updateNotes(updatedNotes);
+      await saveTodo(user.uid, todo.id, updatedTodo);
+      const { todos: updatedTodos } = await fetchUserData(user.uid);
+      updateNotes(updatedTodos);
     } catch (error) {
       console.error('Error updating todo status:', error);
     }
   };
-
+  
   const handleEdit = async (e) => {
     e.stopPropagation();
     if (isEditing) {
       const updatedTodo = {
         ...todo,
         title: editedTitle,
-        dueDate: editedDueDate,
+        start: new Date(editedStart),
+        end: new Date(editedEnd),
         importance: editedImportance
       };
-
+  
       try {
-        await saveNote(user.uid, todo.id, updatedTodo);
-        const updatedNotes = await fetchUserNotes(user.uid);
-        updateNotes(updatedNotes);
+        await saveTodo(user.uid, todo.id, updatedTodo);
+        const { todos: updatedTodos } = await fetchUserData(user.uid);
+        updateNotes(updatedTodos);
         setIsEditing(false);
       } catch (error) {
         console.error('Error updating todo:', error);
@@ -59,23 +62,41 @@ const TodoItem = ({ todo, onMoveUp, onMoveDown, onClick }) => {
       setIsEditing(true);
     }
   };
+  
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    try {
+      await deleteTodo(user.uid, todo.id);
+      const { todos: updatedTodos } = await fetchUserData(user.uid);
+      updateNotes(updatedTodos);
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+    }
+  };
 
   const handleCancelEdit = (e) => {
     e.stopPropagation();
     setIsEditing(false);
     setEditedTitle(todo.title);
-    setEditedDueDate(todo.dueDate);
+    setEditedStart(moment(todo.start).format('YYYY-MM-DDTHH:mm'));
+    setEditedEnd(moment(todo.end).format('YYYY-MM-DDTHH:mm'));
     setEditedImportance(todo.importance || 0);
   };
-
-  const handleDelete = async (e) => {
+  
+  const handleImportanceChange = async (e) => {
     e.stopPropagation();
+    const newImportance = Number(e.target.value);
+    const updatedTodo = {
+      ...todo,
+      importance: newImportance
+    };
+  
     try {
-      await deleteNote(user.uid, todo.id);
-      const updatedNotes = await fetchUserNotes(user.uid);
-      updateNotes(updatedNotes);
+      await saveTodo(user.uid, todo.id, updatedTodo);
+      const { todos: updatedTodos } = await fetchUserData(user.uid);
+      updateNotes(updatedTodos);
     } catch (error) {
-      console.error('Error deleting todo:', error);
+      console.error('Error updating todo importance:', error);
     }
   };
 
@@ -94,9 +115,16 @@ const TodoItem = ({ todo, onMoveUp, onMoveDown, onClick }) => {
             onClick={(e) => e.stopPropagation()}
           />
           <input
-            type="date"
-            value={editedDueDate}
-            onChange={(e) => setEditedDueDate(e.target.value)}
+            type="datetime-local"
+            value={editedStart}
+            onChange={(e) => setEditedStart(e.target.value)}
+            className="mr-2 p-1 border rounded"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <input
+            type="datetime-local"
+            value={editedEnd}
+            onChange={(e) => setEditedEnd(e.target.value)}
             className="mr-2 p-1 border rounded"
             onClick={(e) => e.stopPropagation()}
           />
@@ -135,10 +163,10 @@ const TodoItem = ({ todo, onMoveUp, onMoveDown, onClick }) => {
             <span className={todo.status === 'completed' ? 'line-through' : ''}>{todo.title}</span>
           </div>
           <div className="flex items-center">
-            <span className="mr-2">{todo.dueDate}</span>
+            <span className="mr-2">{moment(todo.start).format('MMM D, HH:mm')} - {moment(todo.end).format('HH:mm')}</span>
             <select
               value={todo.importance || 0}
-              onChange={(e) => handleEdit({ ...todo, importance: Number(e.target.value) })}
+              onChange={handleImportanceChange}
               className="mr-2 p-1 border rounded"
               onClick={(e) => e.stopPropagation()}
             >

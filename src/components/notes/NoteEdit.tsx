@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { saveNote, fetchUserNotes } from '../../services/DataService';
+import { saveNote, fetchUserData } from '../../services/DataService';
 import { useDataContext } from '../../context/DataContext';
 import CodeMirrorEditor from '../markdown/CodeMirrorEditor';
 import Preview from '../markdown/Preview';
@@ -31,7 +31,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
     const fetchNote = async () => {
       if (noteId && noteId !== 'new') {
         try {
-          const notes = await fetchUserNotes(userId);
+          const { notes } = await fetchUserData(userId);
           const fetchedNote = notes.find(n => n.id === noteId);
           if (fetchedNote) {
             setNote(fetchedNote);
@@ -45,14 +45,10 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
         setLoading(false);
       }
     };
-
+  
     fetchNote();
   }, [noteId, userId]);
-
-  const handleChange = useCallback((newContent: string) => {
-    setNote(prevNote => ({ ...prevNote, content: newContent }));
-  }, []);
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -60,7 +56,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
   
     try {
       const savedNoteId = await saveNote(userId, noteId === 'new' ? null : noteId, note);
-      const updatedNotes = await fetchUserNotes(userId);
+      const { notes: updatedNotes } = await fetchUserData(userId);
       updateNotes(updatedNotes);
       navigate(note.category === 'Todo' ? '/todos' : `/notes/${savedNoteId}`);
     } catch (err) {
@@ -69,6 +65,10 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
       setSaving(false);
     }
   };
+
+  const handleChange = useCallback((newContent: string) => {
+    setNote(prevNote => ({ ...prevNote, content: newContent }));
+  }, []);
 
   const handleHeightChange = useCallback((height: number) => {
     setContentHeight(height);

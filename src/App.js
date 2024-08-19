@@ -10,6 +10,7 @@ import TodoCalendar from './components/calendar/TodoCalendar';
 import Header from './components/layout/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import TodoView from './components/todo/TodoView';
 
 const App = () => {
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
@@ -52,6 +53,7 @@ const App = () => {
                   } 
                 />
                 <Route path="*" element={<Navigate to="/notes" replace />} />
+                <Route path="/todos/:todoId" element={<TodoView />} />
               </Routes>
             </main>
           </div>

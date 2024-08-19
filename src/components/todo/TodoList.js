@@ -10,7 +10,7 @@ import { Search } from 'lucide-react';
 const TodoList = () => {
   const { todos, loading, error, updateNotes } = useDataContext();
   const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('dueDate');
+  const [sortBy, setSortBy] = useState('start');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
@@ -34,8 +34,11 @@ const TodoList = () => {
     if (a.status === 'completed' && b.status !== 'completed') return 1;
     if (a.status !== 'completed' && b.status === 'completed') return -1;
 
-    if (sortBy === 'dueDate') {
-      return new Date(a.dueDate) - new Date(b.dueDate);
+    if (sortBy === 'start') {
+      return new Date(a.start) - new Date(b.start);
+    }
+    if (sortBy === 'end') {
+      return new Date(a.end) - new Date(b.end);
     }
     if (sortBy === 'title') {
       return a.title.localeCompare(b.title);
@@ -87,7 +90,8 @@ const TodoList = () => {
             onChange={(e) => setSortBy(e.target.value)}
             className="p-2 border rounded"
           >
-            <option value="dueDate">Sort by Due Date</option>
+            <option value="start">Sort by Start Time</option>
+            <option value="end">Sort by End Time</option>
             <option value="title">Sort by Title</option>
             <option value="importance">Sort by Importance</option>
           </select>

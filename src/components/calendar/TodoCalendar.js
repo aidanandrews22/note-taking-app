@@ -1,36 +1,111 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
+import moment from 'moment';
 import { useDataContext } from '../../context/DataContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Calendar, Filter, CheckSquare, Square } from 'lucide-react';
+import { Filter } from 'lucide-react';
+import { saveNote, saveTodo, fetchUserData } from '../../services/DataService';
+import { useAuth } from '../../context/AuthContext';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
+
+const localizer = momentLocalizer(moment);
+const DnDCalendar = withDragAndDrop(Calendar);
 
 const importanceColors = [
-  'bg-gray-100',  // Trivial
-  'bg-blue-100',  // 1
-  'bg-green-100', // 2
-  'bg-yellow-100', // 3
-  'bg-orange-100', // 4
-  'bg-red-100'    // Important!
+  '#E0E0E0',  // Trivial
+  '#BBDEFB',  // 1
+  '#C8E6C9',  // 2
+  '#FFF9C4',  // 3
+  '#FFCC80',  // 4
+  '#FFCDD2'   // Important!
 ];
 
 const TodoCalendar = () => {
-  const { todos } = useDataContext();
+  const { todos, updateNotes } = useDataContext();
   const [showCompleted, setShowCompleted] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Group todos by date
-  const todosByDate = todos.reduce((acc, todo) => {
-    if (!showCompleted && todo.status === 'completed') return acc;
-    const date = todo.dueDate;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(todo);
-    return acc;
-  }, {});
+  console.log('Todos in calendar:', todos);
 
-  const handleTodoClick = (todoId) => {
-    navigate(`/notes/${todoId}`);
-  };
+  const handleTodoClick = useCallback((event) => {
+    navigate(`/notes/${event.id}`);
+  }, [navigate]);
+
+  const events = todos
+    .filter(todo => showCompleted || todo.status !== 'completed')
+    .map(todo => ({
+      id: todo.id,
+      title: todo.title,
+      start: new Date(todo.start),
+      end: new Date(todo.end),
+      allDay: false,
+      resource: {
+        status: todo.status,
+        importance: todo.importance
+      }
+    }));
+
+  const eventStyleGetter = useCallback((event) => {
+    const style = {
+      backgroundColor: importanceColors[event.resource.importance || 0],
+      borderRadius: '5px',
+      opacity: event.resource.status === 'completed' ? 0.5 : 1,
+      color: '#333',
+      border: 'none',
+      display: 'block'
+    };
+    return { style };
+  }, []);
+
+  const onEventDrop = useCallback(
+    async ({ event, start, end }) => {
+      const updatedTodo = todos.find(todo => todo.id === event.id);
+      if (updatedTodo) {
+        const newTodo = { ...updatedTodo, start, end };
+        await saveTodo(user.uid, event.id, newTodo);
+        const { todos: updatedTodos } = await fetchUserData(user.uid);
+        updateNotes(updatedTodos);
+      }
+    },
+    [todos, user.uid, updateNotes]
+  );
+  
+  const onEventResize = useCallback(
+    async ({ event, start, end }) => {
+      const updatedTodo = todos.find(todo => todo.id === event.id);
+      if (updatedTodo) {
+        const newTodo = { ...updatedTodo, start, end };
+        await saveTodo(user.uid, event.id, newTodo);
+        const { todos: updatedTodos } = await fetchUserData(user.uid);
+        updateNotes(updatedTodos);
+      }
+    },
+    [todos, user.uid, updateNotes]
+  );
+  
+  const onSelectSlot = useCallback(
+    async ({ start, end }) => {
+      const title = window.prompt('New todo name');
+      if (title) {
+        const newTodo = {
+          title,
+          start,
+          end,
+          category: 'Todo',
+          status: 'pending',
+          importance: 0,
+          content: '',
+        };
+        await saveTodo(user.uid, null, newTodo);
+        const { todos: updatedTodos } = await fetchUserData(user.uid);
+        updateNotes(updatedTodos);
+      }
+    },
+    [user.uid, updateNotes]
+  );
 
   return (
     <div className="todo-calendar">
@@ -47,35 +122,21 @@ const TodoCalendar = () => {
           <Link to="/todos" className="btn btn-secondary">Back to Todos</Link>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(todosByDate).map(([date, todos]) => (
-          <div key={date} className="calendar-day bg-white shadow rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-2 flex items-center">
-              <Calendar className="mr-2" size={18} />
-              {date}
-            </h3>
-            <ul className="space-y-2">
-              {todos.map(todo => (
-                <li 
-                  key={todo.id} 
-                  className={`text-sm p-2 rounded ${importanceColors[todo.importance || 0]} cursor-pointer transition-opacity duration-200 ${todo.status === 'completed' ? 'opacity-50' : 'opacity-100'}`}
-                  onClick={() => handleTodoClick(todo.id)}
-                >
-                  <div className="flex items-center">
-                    {todo.status === 'completed' ? (
-                      <CheckSquare className="mr-2" size={16} />
-                    ) : (
-                      <Square className="mr-2" size={16} />
-                    )}
-                    <span className={todo.status === 'completed' ? 'line-through' : ''}>
-                      {todo.title}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div style={{ height: 'calc(100vh - 200px)' }}>
+        <DnDCalendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: '100%' }}
+          onSelectEvent={handleTodoClick}
+          eventPropGetter={eventStyleGetter}
+          onEventDrop={onEventDrop}
+          onEventResize={onEventResize}
+          onSelectSlot={onSelectSlot}
+          selectable
+          resizable
+        />
       </div>
     </div>
   );
