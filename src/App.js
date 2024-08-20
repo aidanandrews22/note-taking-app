@@ -11,6 +11,13 @@ import Header from './components/layout/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import TodoView from './components/todo/TodoView';
+import { useAuth } from './context/AuthContext';
+
+const DebugComponent = () => {
+  const { user, loading } = useAuth();
+  console.log('Auth State:', { user, loading });
+  return null;
+};
 
 const App = () => {
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
@@ -23,6 +30,7 @@ const App = () => {
     <AuthProvider>
       <DataProvider>
         <Router>
+          <DebugComponent />
           <div className="flex flex-col min-h-screen">
             <Header toggleDirectory={toggleDirectory} isDirectoryOpen={isDirectoryOpen} />
             <main className="flex-grow container mx-auto px-4 py-4">
