@@ -15,7 +15,7 @@ import Directory from '../components/notes/Directory';
 import { PlusCircle, RefreshCcw, BarChart2, Edit } from 'lucide-react';
 
 const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
-  const { notes, loading, error } = useDataContext();
+  const { todoItems, calendarItems, loading, error } = useDataContext();
   const { user } = useAuth();
   const reloadData = useDataReload();
   const location = useLocation();
@@ -66,16 +66,17 @@ const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
     setSelectedCategory(category === selectedCategory ? null : category);
   };
 
-  const filteredNotes = selectedCategory
-    ? notes.filter(note => note.category === selectedCategory)
-    : notes;
+  const allItems = [...(Array.isArray(todoItems) ? todoItems : []), ...(Array.isArray(calendarItems) ? calendarItems : [])];
+  const filteredItems = selectedCategory
+    ? allItems.filter(item => item.category === selectedCategory)
+    : allItems;
 
   const graphData = {
     nodes: [
-      ...filteredNotes.map(note => ({ id: note.id, name: note.title, val: 10 })),
-      ...Array.from(new Set(filteredNotes.map(note => note.category))).map(category => ({ id: category, name: category, val: 20, isCategory: true }))
+      ...filteredItems.map(item => ({ id: item.id, name: item.title, val: 10 })),
+      ...Array.from(new Set(filteredItems.map(item => item.category))).map(category => ({ id: category, name: category, val: 20, isCategory: true }))
     ],
-    links: filteredNotes.map(note => ({ source: note.id, target: note.category, distance: 50 }))
+    links: filteredItems.map(item => ({ source: item.id, target: item.category, distance: 50 }))
   };
 
   return (
@@ -91,7 +92,7 @@ const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
           `}
         >
           <Directory 
-            notes={notes} 
+            items={allItems} 
             onClose={() => setIsDirectoryOpen(false)}
             isOpen={isDirectoryOpen}
           />
@@ -100,7 +101,7 @@ const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
           <div className="container mx-auto px-4">
             {isListView && (
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">My Notes</h2>
+                <h2 className="text-2xl font-bold">My Items</h2>
                 <div className="space-x-2">
                   <button
                     onClick={reloadData}
@@ -125,7 +126,7 @@ const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
                 <Route path=":noteId" element={<NoteView userId={user.uid} isAdmin={isAdmin} />} />
                 <Route path=":noteId/edit" element={
                   isPreview ? 
-                    <Preview doc={notes.find(n => n.id === location.pathname.split('/')[2])?.content || ''} /> :
+                    <Preview doc={allItems.find(n => n.id === location.pathname.split('/')[2])?.content || ''} /> :
                     <NoteEdit userId={user.uid} isAdmin={isAdmin} onTogglePreview={toggleViewMode} />
                 } />
                 <Route path="new" element={<NoteEdit userId={user.uid} isAdmin={isAdmin} onTogglePreview={toggleViewMode} />} />

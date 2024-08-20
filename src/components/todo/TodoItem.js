@@ -1,196 +1,227 @@
 import React, { useState } from 'react';
 import { useDataContext } from '../../context/DataContext';
-import { saveTodo, fetchUserData, deleteTodo } from '../../services/DataService';
+import { saveTodoItem, fetchUserData, deleteTodoItem } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
-import { Trash2, Edit2, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Edit2, Check, X, Clock, Flag, Tag, ChevronDown, ChevronUp } from 'lucide-react';
 import moment from 'moment';
 
 const importanceColors = [
-  'bg-gray-100',  // Trivial
-  'bg-blue-100',  // 1
-  'bg-green-100', // 2
-  'bg-yellow-100', // 3
-  'bg-orange-100', // 4
-  'bg-red-100'    // Important!
+  'bg-gray-100',  // Low
+  'bg-yellow-100', // Medium
+  'bg-red-100'    // High
 ];
 
-const TodoItem = ({ todo, onMoveUp, onMoveDown, onClick }) => {
-  const { updateNotes } = useDataContext();
+const TodoItem = ({ todo, onClick }) => {
+  const { updateTodoItems } = useDataContext();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(todo.title);
-  const [editedStart, setEditedStart] = useState(moment(todo.start).format('YYYY-MM-DDTHH:mm'));
-  const [editedEnd, setEditedEnd] = useState(moment(todo.end).format('YYYY-MM-DDTHH:mm'));
-  const [editedImportance, setEditedImportance] = useState(todo.importance || 0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [editedTodo, setEditedTodo] = useState(todo);
+  const [newSubtask, setNewSubtask] = useState('');
 
-  const toggleStatus = async (e) => {
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditedTodo(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSave = async (e) => {
     e.stopPropagation();
-    const updatedTodo = {
-      ...todo,
-      status: todo.status === 'completed' ? 'pending' : 'completed'
-    };
-  
     try {
-      await saveTodo(user.uid, todo.id, updatedTodo);
-      const { todos: updatedTodos } = await fetchUserData(user.uid);
-      updateNotes(updatedTodos);
+      await saveTodoItem(user.uid, todo.id, editedTodo);
+      const { todoItems: updatedTodoItems } = await fetchUserData(user.uid);
+      updateTodoItems(updatedTodoItems);
+      setIsEditing(false);
     } catch (error) {
-      console.error('Error updating todo status:', error);
+      console.error('Error updating todo item:', error);
     }
   };
-  
-  const handleEdit = async (e) => {
-    e.stopPropagation();
-    if (isEditing) {
-      const updatedTodo = {
-        ...todo,
-        title: editedTitle,
-        start: new Date(editedStart),
-        end: new Date(editedEnd),
-        importance: editedImportance
-      };
-  
-      try {
-        await saveTodo(user.uid, todo.id, updatedTodo);
-        const { todos: updatedTodos } = await fetchUserData(user.uid);
-        updateNotes(updatedTodos);
-        setIsEditing(false);
-      } catch (error) {
-        console.error('Error updating todo:', error);
-      }
-    } else {
-      setIsEditing(true);
-    }
-  };
-  
+
   const handleDelete = async (e) => {
     e.stopPropagation();
-    try {
-      await deleteTodo(user.uid, todo.id);
-      const { todos: updatedTodos } = await fetchUserData(user.uid);
-      updateNotes(updatedTodos);
-    } catch (error) {
-      console.error('Error deleting todo:', error);
+    if (window.confirm('Are you sure you want to delete this todo item?')) {
+      try {
+        await deleteTodoItem(user.uid, todo.id);
+        const { todoItems: updatedTodoItems } = await fetchUserData(user.uid);
+        updateTodoItems(updatedTodoItems);
+      } catch (error) {
+        console.error('Error deleting todo item:', error);
+      }
     }
   };
 
-  const handleCancelEdit = (e) => {
-    e.stopPropagation();
-    setIsEditing(false);
-    setEditedTitle(todo.title);
-    setEditedStart(moment(todo.start).format('YYYY-MM-DDTHH:mm'));
-    setEditedEnd(moment(todo.end).format('YYYY-MM-DDTHH:mm'));
-    setEditedImportance(todo.importance || 0);
+  const handleSubtaskToggle = async (subtaskId) => {
+    const updatedSubtasks = editedTodo.subtasks.map(subtask =>
+      subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask
+    );
+    const updatedTodo = { ...editedTodo, subtasks: updatedSubtasks };
+    setEditedTodo(updatedTodo);
+    await handleSave({ stopPropagation: () => {} });
   };
-  
-  const handleImportanceChange = async (e) => {
-    e.stopPropagation();
-    const newImportance = Number(e.target.value);
-    const updatedTodo = {
-      ...todo,
-      importance: newImportance
+
+  const handleAddSubtask = async (e) => {
+    e.preventDefault();
+    if (!newSubtask.trim()) return;
+    const newSubtaskItem = {
+      id: Date.now().toString(),
+      title: newSubtask.trim(),
+      completed: false
     };
-  
-    try {
-      await saveTodo(user.uid, todo.id, updatedTodo);
-      const { todos: updatedTodos } = await fetchUserData(user.uid);
-      updateNotes(updatedTodos);
-    } catch (error) {
-      console.error('Error updating todo importance:', error);
-    }
+    const updatedTodo = {
+      ...editedTodo,
+      subtasks: [...(editedTodo.subtasks || []), newSubtaskItem]
+    };
+    setEditedTodo(updatedTodo);
+    setNewSubtask('');
+    await handleSave({ stopPropagation: () => {} });
+  };
+
+  const calculateProgress = () => {
+    if (!editedTodo.subtasks || editedTodo.subtasks.length === 0) return 0;
+    const completedSubtasks = editedTodo.subtasks.filter(subtask => subtask.completed).length;
+    return (completedSubtasks / editedTodo.subtasks.length) * 100;
   };
 
   return (
     <div 
-      className={`todo-item ${todo.status} ${importanceColors[todo.importance || 0]} flex items-center justify-between p-2 border-b cursor-pointer`}
-      onClick={() => onClick(todo.id)}
+      className={`todo-item ${editedTodo.status} ${importanceColors[editedTodo.importance]} p-4 border-b cursor-pointer`}
+      onClick={() => !isEditing && onClick(todo.id)}
     >
-      {isEditing ? (
-        <>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
           <input
-            type="text"
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            className="mr-2 p-1 border rounded"
-            onClick={(e) => e.stopPropagation()}
+            type="checkbox"
+            checked={editedTodo.status === 'completed'}
+            onChange={(e) => {
+              e.stopPropagation();
+              setEditedTodo(prev => ({ ...prev, status: e.target.checked ? 'completed' : 'in-progress' }));
+              handleSave(e);
+            }}
+            className="form-checkbox h-5 w-5 text-blue-600"
           />
-          <input
-            type="datetime-local"
-            value={editedStart}
-            onChange={(e) => setEditedStart(e.target.value)}
-            className="mr-2 p-1 border rounded"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <input
-            type="datetime-local"
-            value={editedEnd}
-            onChange={(e) => setEditedEnd(e.target.value)}
-            className="mr-2 p-1 border rounded"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <select
-            value={editedImportance}
-            onChange={(e) => setEditedImportance(Number(e.target.value))}
-            className="mr-2 p-1 border rounded"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <option value={0}>Trivial</option>
-            <option value={1}>1</option>
-            <option value={2}>2</option>
-            <option value={3}>3</option>
-            <option value={4}>4</option>
-            <option value={5}>Important!</option>
-          </select>
+          <span className={editedTodo.status === 'completed' ? 'line-through' : ''}>{editedTodo.title}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Clock size={18} />
+          <span>{moment(editedTodo.dueDate).format('MMM D, HH:mm')}</span>
+          <Flag size={18} className={`text-${editedTodo.importance === 0 ? 'gray' : editedTodo.importance === 1 ? 'yellow' : 'red'}-500`} />
+          {editedTodo.tags && editedTodo.tags.map((tag, index) => (
+            <Tag key={index} size={18} className="text-blue-500" />
+          ))}
+          <button onClick={(e) => { e.stopPropagation(); setIsEditing(!isEditing); }} className="btn btn-secondary">
+            <Edit2 size={18} />
+          </button>
+          <button onClick={handleDelete} className="btn btn-danger">
+            <Trash2 size={18} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="btn btn-secondary">
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+        </div>
+      </div>
+      {isExpanded && (
+        <div className="mt-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+          {isEditing ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                name="title"
+                value={editedTodo.title}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              />
+              <input
+                type="datetime-local"
+                name="dueDate"
+                value={moment(editedTodo.dueDate).format('YYYY-MM-DDTHH:mm')}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              />
+              <select
+                name="importance"
+                value={editedTodo.importance}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value={0}>Low</option>
+                <option value={1}>Medium</option>
+                <option value={2}>High</option>
+              </select>
+              <select
+                name="status"
+                value={editedTodo.status}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="not-started">Not Started</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <input
+                type="number"
+                name="estimatedTime"
+                value={editedTodo.estimatedTime}
+                onChange={handleChange}
+                placeholder="Estimated time (minutes)"
+                className="w-full p-2 border rounded"
+              />
+              <textarea
+                name="description"
+                value={editedTodo.description}
+                onChange={handleChange}
+                placeholder="Description"
+                className="w-full p-2 border rounded"
+                rows="3"
+              ></textarea>
+              <div>
+                <button onClick={handleSave} className="btn btn-primary mr-2">Save</button>
+                <button onClick={() => setIsEditing(false)} className="btn btn-secondary">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p><strong>Description:</strong> {editedTodo.description}</p>
+              <p><strong>Estimated Time:</strong> {editedTodo.estimatedTime} minutes</p>
+              <p><strong>Status:</strong> {editedTodo.status}</p>
+              <p><strong>Importance:</strong> {['Low', 'Medium', 'High'][editedTodo.importance]}</p>
+            </div>
+          )}
           <div>
-            <button onClick={handleEdit} className="text-green-500 hover:text-green-700 mr-2">
-              <Check size={18} />
-            </button>
-            <button onClick={handleCancelEdit} className="text-red-500 hover:text-red-700">
-              <X size={18} />
-            </button>
+            <h4 className="font-bold mb-2">Subtasks</h4>
+            {editedTodo.subtasks && editedTodo.subtasks.map(subtask => (
+              <div key={subtask.id} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={subtask.completed}
+                  onChange={() => handleSubtaskToggle(subtask.id)}
+                  className="form-checkbox h-4 w-4 text-blue-600"
+                />
+                <span className={subtask.completed ? 'line-through' : ''}>{subtask.title}</span>
+              </div>
+            ))}
+            <form onSubmit={handleAddSubtask} className="mt-2 flex">
+              <input
+                type="text"
+                value={newSubtask}
+                onChange={(e) => setNewSubtask(e.target.value)}
+                placeholder="New subtask"
+                className="flex-grow p-2 border rounded-l"
+              />
+              <button type="submit" className="btn btn-primary rounded-r">Add</button>
+            </form>
           </div>
-        </>
-      ) : (
-        <>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={todo.status === 'completed'}
-              onChange={toggleStatus}
-              className="mr-2"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <span className={todo.status === 'completed' ? 'line-through' : ''}>{todo.title}</span>
+          <div className="mt-2">
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{ width: `${calculateProgress()}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">Progress: {calculateProgress().toFixed(0)}%</p>
           </div>
-          <div className="flex items-center">
-            <span className="mr-2">{moment(todo.start).format('MMM D, HH:mm')} - {moment(todo.end).format('HH:mm')}</span>
-            <select
-              value={todo.importance || 0}
-              onChange={handleImportanceChange}
-              className="mr-2 p-1 border rounded"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <option value={0}>Trivial</option>
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-              <option value={4}>4</option>
-              <option value={5}>Important!</option>
-            </select>
-            <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} className="text-gray-500 hover:text-gray-700 mr-1">
-              <ArrowUp size={18} />
-            </button>
-            <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} className="text-gray-500 hover:text-gray-700 mr-1">
-              <ArrowDown size={18} />
-            </button>
-            <button onClick={handleEdit} className="text-blue-500 hover:text-blue-700 mr-1">
-              <Edit2 size={18} />
-            </button>
-            <button onClick={handleDelete} className="text-red-500 hover:text-red-700">
-              <Trash2 size={18} />
-            </button>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

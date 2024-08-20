@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
-import { Home, LogOut, User, ChevronDown, Menu, CheckSquare } from 'lucide-react';
+import { Home, LogOut, User, ChevronDown, Menu, CheckSquare, Calendar, BarChart2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Header = ({ toggleDirectory, isDirectoryOpen }) => {
@@ -34,9 +34,21 @@ const Header = ({ toggleDirectory, isDirectoryOpen }) => {
         </div>
         {user && (
           <div className="flex items-center">
-            <Link to="/todos" className="mr-4 flex items-center">
+            <Link to="/notes" className={`mr-4 flex items-center ${location.pathname.startsWith('/notes') ? 'text-blue-500' : ''}`}>
+              <Home className="h-6 w-6 mr-2" />
+              <span className="hidden md:inline">Notes</span>
+            </Link>
+            <Link to="/todos" className={`mr-4 flex items-center ${location.pathname.startsWith('/todos') ? 'text-blue-500' : ''}`}>
               <CheckSquare className="h-6 w-6 mr-2" />
               <span className="hidden md:inline">Todos</span>
+            </Link>
+            <Link to="/calendar" className={`mr-4 flex items-center ${location.pathname.startsWith('/calendar') ? 'text-blue-500' : ''}`}>
+              <Calendar className="h-6 w-6 mr-2" />
+              <span className="hidden md:inline">Calendar</span>
+            </Link>
+            <Link to="/analytics" className={`mr-4 flex items-center ${location.pathname.startsWith('/analytics') ? 'text-blue-500' : ''}`}>
+              <BarChart2 className="h-6 w-6 mr-2" />
+              <span className="hidden md:inline">Analytics</span>
             </Link>
             <div className="relative">
               <button

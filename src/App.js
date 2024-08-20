@@ -10,12 +10,14 @@ import TodoCalendar from './components/calendar/TodoCalendar';
 import Header from './components/layout/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import TodoView from './components/todo/TodoView';
+import CalendarItemView from './components/calendar/CalendarItemView';
+import TodoItemView from './components/todo/TodoItemView';
+import AnalyticsDashboard from './components/common/AnalyticsDashboard.js';
 import { useAuth } from './context/AuthContext';
 
 const DebugComponent = () => {
   const { user, loading } = useAuth();
-  console.log('Auth State:', { user, loading });
+  // console.log('Auth State:', { user, loading });
   return null;
 };
 
@@ -53,15 +55,54 @@ const App = () => {
                   } 
                 />
                 <Route 
-                  path="/todo-calendar" 
+                  path="/todos/:itemId" 
+                  element={
+                    <PrivateRoute>
+                      <TodoItemView />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/todos/new" 
+                  element={
+                    <PrivateRoute>
+                      <TodoItemView />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/calendar" 
                   element={
                     <PrivateRoute>
                       <TodoCalendar />
                     </PrivateRoute>
                   } 
                 />
+                <Route 
+                  path="/calendar/:itemId" 
+                  element={
+                    <PrivateRoute>
+                      <CalendarItemView />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/calendar/new" 
+                  element={
+                    <PrivateRoute>
+                      <CalendarItemView />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/analytics" 
+                  element={
+                    <PrivateRoute>
+                      <AnalyticsDashboard />
+                    </PrivateRoute>
+                  } 
+                />
                 <Route path="*" element={<Navigate to="/notes" replace />} />
-                <Route path="/todos/:todoId" element={<TodoView />} />
               </Routes>
             </main>
           </div>

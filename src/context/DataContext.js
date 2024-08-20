@@ -6,7 +6,8 @@ const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
   const [notes, setNotes] = useState([]);
-  const [todos, setTodos] = useState([]);
+  const [calendarItems, setCalendarItems] = useState([]);
+  const [todoItems, setTodoItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
@@ -15,10 +16,15 @@ export const DataProvider = ({ children }) => {
     const loadData = async () => {
       if (user) {
         try {
+          setLoading(true);
+          console.log('Loading data for user:', user.uid);
           const { notes: fetchedNotes, todos: fetchedTodos } = await fetchUserData(user.uid);
-          setNotes(fetchedNotes);
-          setTodos(fetchedTodos);
+          console.log('Fetched notes:', fetchedNotes);
+          console.log('Fetched todos:', fetchedTodos);
+          setNotes(fetchedNotes || []);
+          setTodoItems(fetchedTodos || []);
         } catch (err) {
+          console.error('Error loading data:', err);
           setError(err.message);
         } finally {
           setLoading(false);
@@ -30,15 +36,27 @@ export const DataProvider = ({ children }) => {
   }, [user]);
 
   const updateNotes = (newNotes) => {
-    setNotes(newNotes);
+    setNotes(newNotes || []);
   };
 
-  const updateTodos = (newTodos) => {
-    setTodos(newTodos);
+  const updateTodoItems = (newTodoItems) => {
+    setTodoItems(newTodoItems || []);
+  };
+
+  const updateCalendarItems = (newCalendarItems) => {
+    setCalendarItems(newCalendarItems || []);
   };
 
   return (
-    <DataContext.Provider value={{ notes, todos, loading, error, updateNotes, updateTodos }}>
+    <DataContext.Provider value={{ 
+      notes, 
+      todoItems, 
+      loading, 
+      error, 
+      updateNotes, 
+      updateTodoItems,
+      updateCalendarItems
+    }}>
       {children}
     </DataContext.Provider>
   );

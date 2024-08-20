@@ -5,68 +5,53 @@ import AddTodoForm from './AddTodoForm';
 import TodoStats from './TodoStats';
 import { Link, useNavigate } from 'react-router-dom';
 import { checkUpcomingDeadlines } from '../../utils/todoUtils';
-import { Search } from 'lucide-react';
+import { Search, Filter, Calendar } from 'lucide-react';
 
 const TodoList = () => {
-  const { todos, loading, error, updateNotes } = useDataContext();
+  const { todoItems, loading, error } = useDataContext();
   const [filter, setFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('start');
+  const [sortBy, setSortBy] = useState('dueDate');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkUpcomingDeadlines(todos);
-  }, [todos]);
+    console.log('TodoItems in TodoList:', todoItems);
+  }, [todoItems]);
+
+  useEffect(() => {
+    if (todoItems) {
+      checkUpcomingDeadlines(todoItems);
+    }
+  }, [todoItems]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  const filteredTodos = todos.filter(todo => {
+  const filteredTodos = (todoItems || []).filter(todo => {
     const matchesFilter = 
       filter === 'all' || 
       (filter === 'completed' && todo.status === 'completed') ||
-      (filter === 'pending' && todo.status === 'pending');
+      (filter === 'in-progress' && todo.status === 'in-progress') ||
+      (filter === 'not-started' && todo.status === 'not-started');
     const matchesSearch = todo.title.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
   const sortedTodos = [...filteredTodos].sort((a, b) => {
-    if (a.status === 'completed' && b.status !== 'completed') return 1;
-    if (a.status !== 'completed' && b.status === 'completed') return -1;
-
-    if (sortBy === 'start') {
-      return new Date(a.start) - new Date(b.start);
-    }
-    if (sortBy === 'end') {
+    if (sortBy === 'dueDate') {
       return new Date(a.end) - new Date(b.end);
     }
     if (sortBy === 'title') {
       return a.title.localeCompare(b.title);
     }
     if (sortBy === 'importance') {
-      return (b.importance || 0) - (a.importance || 0);
+      return b.importance - a.importance;
     }
     return 0;
   });
 
-  const moveTodo = (index, direction) => {
-    if (
-      (direction === -1 && index === 0) ||
-      (direction === 1 && index === sortedTodos.length - 1)
-    ) {
-      return;
-    }
-
-    const newTodos = [...sortedTodos];
-    const temp = newTodos[index];
-    newTodos[index] = newTodos[index + direction];
-    newTodos[index + direction] = temp;
-
-    updateNotes(newTodos);
-  };
-
   const handleTodoClick = (todoId) => {
-    navigate(`/notes/${todoId}`);
+    navigate(`/todos/${todoId}`);
   };
 
   return (
@@ -83,17 +68,18 @@ const TodoList = () => {
           >
             <option value="all">All</option>
             <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="not-started">Not Started</option>
           </select>
           <select 
             value={sortBy} 
             onChange={(e) => setSortBy(e.target.value)}
             className="p-2 border rounded"
           >
-            <option value="start">Sort by Start Time</option>
-            <option value="end">Sort by End Time</option>
+            <option value="dueDate">Sort by Due Date</option>
             <option value="title">Sort by Title</option>
             <option value="importance">Sort by Importance</option>
+            <option value="estimatedTime">Sort by Estimated Time</option>
           </select>
         </div>
         <div className="flex items-center">
@@ -107,15 +93,16 @@ const TodoList = () => {
             />
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           </div>
-          <Link to="/todo-calendar" className="btn btn-secondary ml-2">View Calendar</Link>
+          <Link to="/calendar" className="btn btn-secondary ml-2 flex items-center">
+            <Calendar className="mr-2" size={18} />
+            View Calendar
+          </Link>
         </div>
       </div>
-      {sortedTodos.map((todo, index) => (
+      {sortedTodos.map((todo) => (
         <TodoItem 
           key={todo.id} 
           todo={todo} 
-          onMoveUp={() => moveTodo(index, -1)}
-          onMoveDown={() => moveTodo(index, 1)}
           onClick={() => handleTodoClick(todo.id)}
         />
       ))}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDataContext } from '../../context/DataContext';
-import { saveTodo, fetchUserData } from '../../services/DataService';
+import { saveTodoItem, fetchUserData } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
 
 const AddTodoForm = () => {
@@ -8,7 +8,7 @@ const AddTodoForm = () => {
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [importance, setImportance] = useState(0);
-  const { updateNotes } = useDataContext();
+  const { updateTodoItems } = useDataContext();
   const { user } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -30,9 +30,9 @@ const AddTodoForm = () => {
     };
   
     try {
-      await saveTodo(user.uid, null, newTodo);
-      const { todos: updatedTodos } = await fetchUserData(user.uid);
-      updateNotes(updatedTodos);
+      await saveTodoItem(user.uid, null, newTodo);
+      const { todoItems: updatedTodos } = await fetchUserData(user.uid);
+      updateTodoItems(updatedTodos);
       setTitle('');
       setStart('');
       setEnd('');

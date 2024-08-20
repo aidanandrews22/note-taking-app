@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { saveNote, fetchUserData } from '../../services/DataService';
 import { useDataContext } from '../../context/DataContext';
+import { saveCalendarItem, saveTodoItem, fetchUserData, Note, Todo } from '../../services/DataService';
+import { useAuth } from '../../context/AuthContext';
 import CodeMirrorEditor from '../markdown/CodeMirrorEditor';
 import Preview from '../markdown/Preview';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 
-interface Note {
-  title: string;
-  content: string;
-  category: string;
-  isPublic: boolean;
+interface NoteEditProps {
+  userId: string;
+  isAdmin: boolean;
+  onTogglePreview: () => void;
 }
 
-const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: () => void }> = ({ userId, isAdmin, onTogglePreview }) => {
-  const [note, setNote] = useState<Note>({ title: '', content: '', category: 'Misc', isPublic: false });
+type NoteOrTodo = (Note | Todo) & { content?: string };
+
+const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview }) => {
+  const [note, setNote] = useState<NoteOrTodo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,17 +26,17 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
   const [contentHeight, setContentHeight] = useState<number>(300);
   const { noteId } = useParams<{ noteId: string }>();
   const navigate = useNavigate();
-  const { updateNotes } = useDataContext();
+  const { updateTodoItems, updateCalendarItems } = useDataContext();
   const location = useLocation();
 
   useEffect(() => {
     const fetchNote = async () => {
       if (noteId && noteId !== 'new') {
         try {
-          const { notes } = await fetchUserData(userId);
-          const fetchedNote = notes.find(n => n.id === noteId);
+          const { notes, todos } = await fetchUserData(userId);
+          const fetchedNote = [...notes, ...todos].find(n => n.id === noteId);
           if (fetchedNote) {
-            setNote(fetchedNote);
+            setNote(fetchedNote as NoteOrTodo);
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err));
@@ -51,14 +53,21 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!note) return;
     setSaving(true);
     setError(null);
   
     try {
-      const savedNoteId = await saveNote(userId, noteId === 'new' ? null : noteId, note);
-      const { notes: updatedNotes } = await fetchUserData(userId);
-      updateNotes(updatedNotes);
-      navigate(note.category === 'Todo' ? '/todos' : `/notes/${savedNoteId}`);
+      if (note.category === 'Todo') {
+        await saveTodoItem(userId, noteId === 'new' ? null : noteId || null, note as Todo);
+        const { todos: updatedTodos } = await fetchUserData(userId);
+        updateTodoItems(updatedTodos);
+      } else {
+        await saveCalendarItem(userId, noteId === 'new' ? null : noteId || null, note as Todo);
+        const { todos: updatedCalendarItems } = await fetchUserData(userId);
+        updateCalendarItems(updatedCalendarItems);
+      }
+      navigate(note.category === 'Todo' ? '/todos' : `/calendar/${noteId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -67,18 +76,16 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
   };
 
   const handleChange = useCallback((newContent: string) => {
-    setNote(prevNote => ({ ...prevNote, content: newContent }));
+    setNote(prev => prev ? { ...prev, content: newContent } : null);
   }, []);
 
   const handleHeightChange = useCallback((height: number) => {
     setContentHeight(height);
   }, []);
 
-  let url = location.pathname;
-  url = url.endsWith('/edit') ? url.slice(0, -5) : url.endsWith('/edit/') ? url.slice(0, -6) : url;
-
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
+  if (!note) return <ErrorMessage message="Note not found" />;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,7 +96,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
           id="title"
           name="title"
           value={note.title}
-          onChange={(e) => setNote(prev => ({ ...prev, title: e.target.value }))}
+          onChange={(e) => setNote(prev => prev ? { ...prev, title: e.target.value } : null)}
           className="input"
           required
         />
@@ -100,7 +107,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
           id="category"
           name="category"
           value={note.category}
-          onChange={(e) => setNote(prev => ({ ...prev, category: e.target.value }))}
+          onChange={(e) => setNote(prev => prev ? { ...prev, category: e.target.value } : null)}
           className="input"
         >
           <option value="Misc">Misc</option>
@@ -124,7 +131,7 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
       <div className={`editor-preview-container ${isSideBySide ? 'flex' : ''}`}>
         <div className={isSideBySide ? 'w-1/2' : 'w-full'}>
           <CodeMirrorEditor
-            initialDoc={note.content}
+            initialDoc={note.content || ''}
             onChange={handleChange}
             onHeightChange={handleHeightChange}
           />
@@ -134,14 +141,14 @@ const NoteEdit: React.FC<{ userId: string, isAdmin: boolean, onTogglePreview: ()
             className="preview-container w-1/2"
             style={{ height: `${contentHeight}px`, overflowY: 'auto' }}
           >
-            <Preview doc={note.content} />
+            <Preview doc={note.content || ''} />
           </div>
         )}
       </div>
       <div className="flex justify-between mt-4">
         <button
           type="button"
-          onClick={() => navigate(url)}
+          onClick={() => navigate(-1)}
           className="btn btn-secondary"
         >
           Cancel
