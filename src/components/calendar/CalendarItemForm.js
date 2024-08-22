@@ -1,64 +1,132 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useDataContext } from '../../context/DataContext';
-import { saveCalendarItem, fetchUserData } from '../../services/DataService';
-import { useAuth } from '../../context/AuthContext';
-import { Calendar, Clock, MapPin, AlertCircle } from 'lucide-react';
+import moment from 'moment';
+import { Calendar, Clock, MapPin, AlertCircle, RepeatIcon, Flag, CheckCircle, Bell } from 'lucide-react';
 
-const CalendarItemForm = () => {
-  const { itemId } = useParams();
-  const navigate = useNavigate();
-  const { calendarItems, updateCalendarItems } = useDataContext();
-  const { user } = useAuth();
+const CalendarItemForm = ({ initialData, onSave, onCancel, onDelete, currentInstanceDate }) => {
   const [formData, setFormData] = useState({
     title: '',
-    start: '',
-    end: '',
+    start: moment().format('YYYY-MM-DDTHH:mm'),
+    end: moment().add(1, 'hour').format('YYYY-MM-DDTHH:mm'),
     allDay: false,
     category: '',
     location: '',
     description: '',
-    reminder: '',
-    frequency: 'none',
+    notification: '',
+    recurrence: {
+      frequency: 'none',
+      interval: 1,
+      weekdays: [],
+      endDate: null,
+    },
     priority: 'medium',
     status: 'confirmed'
   });
 
   useEffect(() => {
-    if (itemId && itemId !== 'new') {
-      const item = calendarItems.find(item => item.id === itemId);
-      if (item) {
-        setFormData({
-          ...item,
-          start: item.start.toISOString().slice(0, 16),
-          end: item.end.toISOString().slice(0, 16)
-        });
-      }
+    if (initialData) {
+      setFormData({
+        ...initialData,
+        start: moment(initialData.start).format('YYYY-MM-DDTHH:mm'),
+        end: moment(initialData.end).format('YYYY-MM-DDTHH:mm'),
+        recurrence: {
+          ...initialData.recurrence,
+          endDate: initialData.recurrence && initialData.recurrence.endDate
+            ? moment(initialData.recurrence.endDate).format('YYYY-MM-DD')
+            : null,
+        }
+      });
     }
-  }, [itemId, calendarItems]);
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === 'start') {
+      const endTime = moment(value).add(1, 'hour').format('YYYY-MM-DDTHH:mm');
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        end: endTime
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+  };
+
+  const handleRecurrenceChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      recurrence: {
+        ...prev.recurrence,
+        [name]: type === 'checkbox' 
+          ? (checked 
+            ? [...prev.recurrence.weekdays, value]
+            : prev.recurrence.weekdays.filter(day => day !== value))
+          : value
+      }
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      await saveCalendarItem(user.uid, itemId === 'new' ? null : itemId, {
+    const dataToSave = {
+      ...formData,
+      start: new Date(formData.start),
+      end: new Date(formData.end),
+      recurrence: {
+        ...formData.recurrence,
+        endDate: formData.recurrence.endDate ? new Date(formData.recurrence.endDate) : null
+      }
+    };
+    onSave(dataToSave);
+  };
+
+  const handleDelete = (deleteType) => {
+    if (deleteType === 'instance' && initialData && initialData.recurrence && initialData.recurrence.frequency !== 'none') {
+      const deletedDate = currentInstanceDate || moment(formData.start).format('YYYY-MM-DD');
+      const updatedBlackoutDates = initialData.recurrence.blackoutDates
+        ? [...initialData.recurrence.blackoutDates, deletedDate]
+        : [deletedDate];
+  
+      const updatedData = {
         ...formData,
-        start: new Date(formData.start),
-        end: new Date(formData.end)
-      });
-      const { calendarItems: updatedCalendarItems } = await fetchUserData(user.uid);
-      updateCalendarItems(updatedCalendarItems);
-      navigate('/calendar');
-    } catch (error) {
-      console.error('Error saving calendar item:', error);
+        recurrence: {
+          ...formData.recurrence,
+          blackoutDates: updatedBlackoutDates,
+        },
+      };
+  
+      onSave(updatedData);
+    } else if (onDelete) {
+      onDelete(formData.id, deleteType);
     }
+  };
+  
+
+  const generateRecurrenceSummary = () => {
+    if (formData.recurrence.frequency === 'none') return '';
+
+    let summary = `Occurs every `;
+    if (formData.recurrence.interval > 1) {
+      summary += `${formData.recurrence.interval} `;
+    }
+    summary += `${formData.recurrence.frequency}`;
+    if (formData.recurrence.interval > 1) summary += 's';
+
+    if (formData.recurrence.frequency === 'week' && formData.recurrence.weekdays.length > 0) {
+      summary += ` on ${formData.recurrence.weekdays.join(', ')}`;
+    }
+
+    summary += ` starting ${moment(formData.start).format('DD MMM YYYY')}`;
+
+    if (formData.recurrence.endDate) {
+      summary += ` until ${moment(formData.recurrence.endDate).format('DD MMM YYYY')}`;
+    }
+
+    return summary;
   };
 
   return (
@@ -75,125 +143,131 @@ const CalendarItemForm = () => {
           required
         />
       </div>
+
       <div className="flex space-x-4">
         <div className="flex-1">
           <label htmlFor="start" className="label">Start</label>
-          <div className="relative">
-            <input
-              type="datetime-local"
-              id="start"
-              name="start"
-              value={formData.start}
-              onChange={handleChange}
-              className="input pl-10"
-              required
-            />
-            <Calendar className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-          </div>
+          <input
+            type="datetime-local"
+            id="start"
+            name="start"
+            value={formData.start}
+            onChange={handleChange}
+            className="input"
+            required
+          />
         </div>
         <div className="flex-1">
           <label htmlFor="end" className="label">End</label>
-          <div className="relative">
-            <input
-              type="datetime-local"
-              id="end"
-              name="end"
-              value={formData.end}
-              onChange={handleChange}
-              className="input pl-10"
-              required
-            />
-            <Clock className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-          </div>
+          <input
+            type="datetime-local"
+            id="end"
+            name="end"
+            value={formData.end}
+            onChange={handleChange}
+            className="input"
+            required
+          />
         </div>
       </div>
+
       <div>
-        <label className="label flex items-center">
-          <input
-            type="checkbox"
-            name="allDay"
-            checked={formData.allDay}
-            onChange={handleChange}
-            className="mr-2"
-          />
-          All-day event
-        </label>
+        <label htmlFor="location" className="label">Location</label>
+        <input
+          type="text"
+          id="location"
+          name="location"
+          value={formData.location}
+          onChange={handleChange}
+          className="input"
+          placeholder="Enter location"
+        />
       </div>
+
       <div>
-        <label htmlFor="category" className="label">Category</label>
+        <label htmlFor="notification" className="label">Notification</label>
         <select
-          id="category"
-          name="category"
-          value={formData.category}
+          id="notification"
+          name="notification"
+          value={formData.notification}
           onChange={handleChange}
           className="input"
         >
-          <option value="">Select a category</option>
-          <option value="Work">Work</option>
-          <option value="Personal">Personal</option>
-          <option value="School">School</option>
+          <option value="">No notification</option>
+          <option value="15">15 minutes before</option>
+          <option value="30">30 minutes before</option>
+          <option value="60">1 hour before</option>
+          <option value="1440">1 day before</option>
         </select>
       </div>
-      <div>
-        <label htmlFor="location" className="label">Location</label>
-        <div className="relative">
-          <input
-            type="text"
-            id="location"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            className="input pl-10"
-          />
-          <MapPin className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-        </div>
-      </div>
-      <div>
-        <label htmlFor="description" className="label">Description</label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          className="input"
-          rows="3"
-        ></textarea>
-      </div>
-      <div>
-        <label htmlFor="reminder" className="label">Reminder</label>
-        <div className="relative">
-          <select
-            id="reminder"
-            name="reminder"
-            value={formData.reminder}
-            onChange={handleChange}
-            className="input pl-10"
-          >
-            <option value="">No reminder</option>
-            <option value="15">15 minutes before</option>
-            <option value="30">30 minutes before</option>
-            <option value="60">1 hour before</option>
-            <option value="1440">1 day before</option>
-          </select>
-          <AlertCircle className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-        </div>
-      </div>
-      <div>
-        <label htmlFor="frequency" className="label">Frequency</label>
+
+      <div className="space-y-2">
+        <label className="label">Recurrence</label>
         <select
-          id="frequency"
           name="frequency"
-          value={formData.frequency}
-          onChange={handleChange}
+          value={formData.recurrence.frequency}
+          onChange={handleRecurrenceChange}
           className="input"
         >
           <option value="none">Does not repeat</option>
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
+          <option value="day">Daily</option>
+          <option value="week">Weekly</option>
+          <option value="month">Monthly</option>
+          <option value="year">Yearly</option>
         </select>
+
+        {formData.recurrence.frequency !== 'none' && (
+          <>
+            <div className="flex items-center space-x-2">
+              <span>Every</span>
+              <input
+                type="number"
+                name="interval"
+                value={formData.recurrence.interval}
+                onChange={handleRecurrenceChange}
+                min="1"
+                className="input w-16"
+              />
+              <span>{formData.recurrence.frequency}(s)</span>
+            </div>
+
+            {formData.recurrence.frequency === 'week' && (
+              <div className="flex space-x-2">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                  <label key={day} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="weekdays"
+                      value={day}
+                      checked={formData.recurrence.weekdays.includes(day)}
+                      onChange={handleRecurrenceChange}
+                      className="mr-1"
+                    />
+                    {day}
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="recurrenceEndDate" className="label">End Date (optional)</label>
+              <input
+                type="date"
+                id="recurrenceEndDate"
+                name="endDate"
+                value={formData.recurrence.endDate || ''}
+                onChange={handleRecurrenceChange}
+                className="input"
+              />
+            </div>
+
+            <div className="text-sm text-gray-600">
+              {generateRecurrenceSummary()}
+            </div>
+          </>
+        )}
       </div>
+
       <div>
         <label htmlFor="priority" className="label">Priority</label>
         <select
@@ -208,6 +282,7 @@ const CalendarItemForm = () => {
           <option value="high">High</option>
         </select>
       </div>
+
       <div>
         <label htmlFor="status" className="label">Status</label>
         <select
@@ -222,14 +297,29 @@ const CalendarItemForm = () => {
           <option value="canceled">Canceled</option>
         </select>
       </div>
+
       <div className="flex justify-between">
-        <button type="button" onClick={() => navigate('/calendar')} className="btn btn-secondary">
+        <button type="button" onClick={onCancel} className="btn btn-secondary">
           Cancel
         </button>
         <button type="submit" className="btn btn-primary">
-          {itemId === 'new' ? 'Create' : 'Update'} Calendar Item
+          {initialData && initialData.id ? 'Update' : 'Create'} Calendar Item
         </button>
       </div>
+
+      {initialData && initialData.id && initialData.recurrence && initialData.recurrence.frequency !== 'none' && (
+        <div className="mt-4">
+          <h3 className="font-semibold mb-2">Delete Options</h3>
+          <div className="space-x-2">
+            <button type="button" onClick={() => handleDelete('instance')} className="btn btn-danger">
+              Delete This Instance
+            </button>
+            <button type="button" onClick={() => handleDelete('series')} className="btn btn-danger">
+              Delete Entire Series
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

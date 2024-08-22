@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useDataContext } from '../../context/DataContext';
-import { saveCalendarItem, saveTodoItem, fetchUserData, Note, Todo } from '../../services/DataService';
+import { fetchUserData, Note, saveNote } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
 import CodeMirrorEditor from '../markdown/CodeMirrorEditor';
 import Preview from '../markdown/Preview';
@@ -14,10 +14,8 @@ interface NoteEditProps {
   onTogglePreview: () => void;
 }
 
-type NoteOrTodo = (Note | Todo) & { content?: string };
-
 const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview }) => {
-  const [note, setNote] = useState<NoteOrTodo | null>(null);
+  const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,17 +24,17 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
   const [contentHeight, setContentHeight] = useState<number>(300);
   const { noteId } = useParams<{ noteId: string }>();
   const navigate = useNavigate();
-  const { updateTodoItems, updateCalendarItems } = useDataContext();
-  const location = useLocation();
+  const { updateNotes } = useDataContext();
 
   useEffect(() => {
     const fetchNote = async () => {
       if (noteId && noteId !== 'new') {
         try {
-          const { notes, todos } = await fetchUserData(userId);
-          const fetchedNote = [...notes, ...todos].find(n => n.id === noteId);
+          setLoading(true);
+          const { notes } = await fetchUserData(userId);
+          const fetchedNote = notes.find(n => n.id === noteId);
           if (fetchedNote) {
-            setNote(fetchedNote as NoteOrTodo);
+            setNote(fetchedNote);
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err));
@@ -44,6 +42,16 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
           setLoading(false);
         }
       } else {
+        // Create a new note
+        setNote({
+          id: '',
+          title: '',
+          content: '',
+          category: 'Misc',
+          isPublic: false,
+          lastEdited: Date.now(),
+          userId: userId
+        });
         setLoading(false);
       }
     };
@@ -58,16 +66,10 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
     setError(null);
   
     try {
-      if (note.category === 'Todo') {
-        await saveTodoItem(userId, noteId === 'new' ? null : noteId || null, note as Todo);
-        const { todos: updatedTodos } = await fetchUserData(userId);
-        updateTodoItems(updatedTodos);
-      } else {
-        await saveCalendarItem(userId, noteId === 'new' ? null : noteId || null, note as Todo);
-        const { todos: updatedCalendarItems } = await fetchUserData(userId);
-        updateCalendarItems(updatedCalendarItems);
-      }
-      navigate(note.category === 'Todo' ? '/todos' : `/calendar/${noteId}`);
+      const savedNoteId = await saveNote(userId, noteId === 'new' ? null : noteId || null, note);
+      const { notes: updatedNotes } = await fetchUserData(userId);
+      updateNotes(updatedNotes);
+      navigate(`/notes/${savedNoteId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -76,7 +78,7 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
   };
 
   const handleChange = useCallback((newContent: string) => {
-    setNote(prev => prev ? { ...prev, content: newContent } : null);
+    setNote((prev: Note | null) => prev ? { ...prev, content: newContent } : null);
   }, []);
 
   const handleHeightChange = useCallback((height: number) => {
@@ -96,7 +98,7 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
           id="title"
           name="title"
           value={note.title}
-          onChange={(e) => setNote(prev => prev ? { ...prev, title: e.target.value } : null)}
+          onChange={(e) => setNote((prev: Note | null) => prev ? { ...prev, title: e.target.value } : null)}
           className="input"
           required
         />
@@ -107,13 +109,12 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
           id="category"
           name="category"
           value={note.category}
-          onChange={(e) => setNote(prev => prev ? { ...prev, category: e.target.value } : null)}
+          onChange={(e) => setNote((prev: Note | null) => prev ? { ...prev, category: e.target.value } : null)}
           className="input"
         >
           <option value="Misc">Misc</option>
           <option value="Work">Work</option>
           <option value="Personal">Personal</option>
-          <option value="Todo">Todo</option>
         </select>
       </div>
       <div className="flex justify-between mb-2">

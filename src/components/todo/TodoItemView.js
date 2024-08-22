@@ -1,27 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDataContext } from '../../context/DataContext';
-import { saveTodoItem, deleteTodoItem, fetchUserData } from '../../services/DataService';
+import { saveTodoItem, deleteTodoItem } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
 import { Calendar, Clock, CheckSquare, AlertCircle, Tag, Flag, Edit2, Trash2, Plus, X } from 'lucide-react';
 import moment from 'moment';
+import SubtaskList from './SubtaskList';
 
 const TodoItemView = () => {
   const { itemId } = useParams();
   const navigate = useNavigate();
-  const { todoItems, updateTodoItems } = useDataContext();
+  const { todos, updateTodos } = useDataContext();
   const { user } = useAuth();
   const [item, setItem] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const foundItem = todoItems.find(i => i.id === itemId);
-    if (foundItem) {
-      setItem(foundItem);
-    } else {
-      navigate('/todos');
+    if (todos) {
+      const foundItem = todos.find(i => i.id === itemId);
+      if (foundItem) {
+        setItem(foundItem);
+      } else {
+        navigate('/todos');
+      }
     }
-  }, [itemId, todoItems, navigate]);
+  }, [itemId, todos, navigate]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -30,10 +33,12 @@ const TodoItemView = () => {
   const handleSave = async (updatedItem) => {
     try {
       await saveTodoItem(user.uid, itemId, updatedItem);
-      const { todoItems: updatedTodoItems } = await fetchUserData(user.uid);
-      updateTodoItems(updatedTodoItems);
       setItem(updatedItem);
       setIsEditing(false);
+      const updatedTodos = todos.map(todo => 
+        todo.id === itemId ? updatedItem : todo
+      );
+      updateTodos(updatedTodos);
     } catch (error) {
       console.error('Error updating todo item:', error);
     }
@@ -43,8 +48,6 @@ const TodoItemView = () => {
     if (window.confirm('Are you sure you want to delete this todo?')) {
       try {
         await deleteTodoItem(user.uid, itemId);
-        const { todoItems: updatedTodoItems } = await fetchUserData(user.uid);
-        updateTodoItems(updatedTodoItems);
         navigate('/todos');
       } catch (error) {
         console.error('Error deleting todo item:', error);
@@ -52,15 +55,23 @@ const TodoItemView = () => {
     }
   };
 
+  const handleSubtaskUpdate = async (updatedSubtasks) => {
+    const updatedItem = { ...item, subtasks: updatedSubtasks };
+    setItem(updatedItem);
+    try {
+      await saveTodoItem(user.uid, itemId, updatedItem);
+      const updatedTodos = todos.map(todo => 
+        todo.id === itemId ? updatedItem : todo
+      );
+      updateTodos(updatedTodos);
+    } catch (error) {
+      console.error('Error updating subtasks:', error);
+    }
+  };
+
   if (!item) {
     return <div>Loading...</div>;
   }
-
-  const calculateProgress = () => {
-    if (!item.subtasks || item.subtasks.length === 0) return 0;
-    const completedSubtasks = item.subtasks.filter(subtask => subtask.completed).length;
-    return (completedSubtasks / item.subtasks.length) * 100;
-  };
 
   return (
     <div className="todo-item-view">
@@ -124,27 +135,11 @@ const TodoItemView = () => {
             )}
             <div>
               <h3 className="font-semibold mb-2">Subtasks</h3>
-              {item.subtasks && item.subtasks.map((subtask, index) => (
-                <div key={index} className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    checked={subtask.completed}
-                    readOnly
-                    className="mr-2"
-                  />
-                  <span>{subtask.title}</span>
-                </div>
-              ))}
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">Progress</h3>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                <div 
-                  className="bg-blue-600 h-2.5 rounded-full" 
-                  style={{ width: `${calculateProgress()}%` }}
-                ></div>
-              </div>
-              <span className="text-sm text-gray-500">{calculateProgress().toFixed(0)}% Complete</span>
+              <SubtaskList 
+                subtasks={item.subtasks || []} 
+                onUpdate={handleSubtaskUpdate}
+                parentTodo={item}
+              />
             </div>
           </div>
         </div>
@@ -154,7 +149,10 @@ const TodoItemView = () => {
 };
 
 const TodoItemForm = ({ item, onSave, onCancel }) => {
-  const [formData, setFormData] = useState(item);
+  const [formData, setFormData] = useState({
+    ...item,
+    subtasks: Array.isArray(item.subtasks) ? item.subtasks : []
+  });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -164,21 +162,7 @@ const TodoItemForm = ({ item, onSave, onCancel }) => {
     }));
   };
 
-  const handleSubtaskChange = (index, field, value) => {
-    const updatedSubtasks = [...formData.subtasks];
-    updatedSubtasks[index] = { ...updatedSubtasks[index], [field]: value };
-    setFormData(prev => ({ ...prev, subtasks: updatedSubtasks }));
-  };
-
-  const addSubtask = () => {
-    setFormData(prev => ({
-      ...prev,
-      subtasks: [...prev.subtasks, { title: '', completed: false }]
-    }));
-  };
-
-  const removeSubtask = (index) => {
-    const updatedSubtasks = formData.subtasks.filter((_, i) => i !== index);
+  const handleSubtaskUpdate = (updatedSubtasks) => {
     setFormData(prev => ({ ...prev, subtasks: updatedSubtasks }));
   };
 
@@ -275,29 +259,11 @@ const TodoItemForm = ({ item, onSave, onCancel }) => {
       />
       <div>
         <h3 className="font-semibold mb-2">Subtasks</h3>
-        {formData.subtasks && formData.subtasks.map((subtask, index) => (
-          <div key={index} className="flex items-center mb-2">
-            <input
-              type="checkbox"
-              checked={subtask.completed}
-              onChange={(e) => handleSubtaskChange(index, 'completed', e.target.checked)}
-              className="mr-2"
-            />
-            <input
-              type="text"
-              value={subtask.title}
-              onChange={(e) => handleSubtaskChange(index, 'title', e.target.value)}
-              className="flex-grow p-2 border rounded mr-2"
-              placeholder="Subtask title"
-            />
-            <button type="button" onClick={() => removeSubtask(index)} className="text-red-500">
-              <X size={18} />
-            </button>
-          </div>
-        ))}
-        <button type="button" onClick={addSubtask} className="btn btn-secondary">
-          <Plus size={18} className="mr-1" /> Add Subtask
-        </button>
+        <SubtaskList 
+          subtasks={formData.subtasks} 
+          onUpdate={handleSubtaskUpdate}
+          parentTodo={formData}
+        />
       </div>
       <div className="flex justify-between">
         <button type="button" onClick={onCancel} className="btn btn-secondary">

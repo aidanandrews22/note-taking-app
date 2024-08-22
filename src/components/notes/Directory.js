@@ -15,16 +15,18 @@ const Directory = ({ items, onClose, isOpen }) => {
     );
   };
 
-  const categories = [...new Set(items.map(item => item.category))];
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
 
-  const filteredItems = items.filter(item => 
-    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const categories = [...new Set(safeItems.map(item => item.category).filter(Boolean))];
+
+  const filteredItems = safeItems.filter(item => 
+    (item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
     <div className={`directory bg-white shadow-lg ${isOpen ? 'directory-open' : 'directory-closed'}`}>
-      {/* ... rest of the component remains the same ... */}
       <div className="directory-content p-4">
         {categories.map(category => (
           <div key={category} className="mb-4">

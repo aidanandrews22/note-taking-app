@@ -8,26 +8,31 @@ import { checkUpcomingDeadlines } from '../../utils/todoUtils';
 import { Search, Filter, Calendar } from 'lucide-react';
 
 const TodoList = () => {
-  const { todoItems, loading, error } = useDataContext();
+  const { todos, loading, error, reloadData } = useDataContext();
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('dueDate');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('TodoItems in TodoList:', todoItems);
-  }, [todoItems]);
+    console.log('TodoItems in TodoList:', todos);
+  }, [todos]);
 
   useEffect(() => {
-    if (todoItems) {
-      checkUpcomingDeadlines(todoItems);
+    if (todos && todos.length > 0) {
+      checkUpcomingDeadlines(todos);
     }
-  }, [todoItems]);
+  }, [todos]);
+
+  useEffect(() => {
+    // Reload data when component mounts
+    reloadData();
+  }, [reloadData]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  const filteredTodos = (todoItems || []).filter(todo => {
+  const filteredTodos = (todos || []).filter(todo => {
     const matchesFilter = 
       filter === 'all' || 
       (filter === 'completed' && todo.status === 'completed') ||
@@ -103,7 +108,7 @@ const TodoList = () => {
         <TodoItem 
           key={todo.id} 
           todo={todo} 
-          onClick={() => handleTodoClick(todo.id)}
+          onClick={handleTodoClick}
         />
       ))}
     </div>

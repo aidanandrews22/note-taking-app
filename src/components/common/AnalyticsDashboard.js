@@ -4,30 +4,40 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import moment from 'moment';
 
 const AnalyticsDashboard = () => {
-  const { todoItems, calendarItems } = useDataContext();
+  const { todos, calendarItems, loading, error } = useDataContext();
+
+  console.log('AnalyticsDashboard - todos:', todos);
+  console.log('AnalyticsDashboard - calendarItems:', calendarItems);
 
   const taskCompletionData = useMemo(() => {
-    const completed = todoItems.filter(item => item.status === 'completed').length;
-    const inProgress = todoItems.filter(item => item.status === 'in-progress').length;
-    const notStarted = todoItems.filter(item => item.status === 'not-started').length;
-    return [
+    if (!todos) return [];
+    const completed = todos.filter(item => item.status === 'completed').length;
+    const inProgress = todos.filter(item => item.status === 'in-progress').length;
+    const notStarted = todos.filter(item => item.status === 'not-started').length;
+    const data = [
       { name: 'Completed', value: completed },
       { name: 'In Progress', value: inProgress },
       { name: 'Not Started', value: notStarted }
     ];
-  }, [todoItems]);
+    console.log('taskCompletionData:', data);
+    return data;
+  }, [todos]);
 
   const categoryDistributionData = useMemo(() => {
+    if (!todos || !calendarItems) return [];
     const categories = {};
-    [...todoItems, ...calendarItems].forEach(item => {
+    [...todos, ...calendarItems].forEach(item => {
       if (item.category) {
         categories[item.category] = (categories[item.category] || 0) + 1;
       }
     });
-    return Object.entries(categories).map(([name, value]) => ({ name, value }));
-  }, [todoItems, calendarItems]);
+    const data = Object.entries(categories).map(([name, value]) => ({ name, value }));
+    console.log('categoryDistributionData:', data);
+    return data;
+  }, [todos, calendarItems]);
 
   const weeklyActivityData = useMemo(() => {
+    if (!todos || !calendarItems) return [];
     const today = moment();
     const startOfWeek = today.clone().startOf('week');
     const data = Array(7).fill(0).map((_, index) => ({
@@ -36,7 +46,7 @@ const AnalyticsDashboard = () => {
       events: 0
     }));
 
-    todoItems.forEach(item => {
+    todos.forEach(item => {
       const dayIndex = moment(item.dueDate).diff(startOfWeek, 'days');
       if (dayIndex >= 0 && dayIndex < 7) {
         data[dayIndex].todos++;
@@ -50,22 +60,29 @@ const AnalyticsDashboard = () => {
       }
     });
 
+    console.log('weeklyActivityData:', data);
     return data;
-  }, [todoItems, calendarItems]);
+  }, [todos, calendarItems]);
 
   const productivityScore = useMemo(() => {
-    const completedTasks = todoItems.filter(item => item.status === 'completed').length;
-    const totalTasks = todoItems.length;
+    if (!todos || !calendarItems) return 0;
+    const completedTasks = todos.filter(item => item.status === 'completed').length;
+    const totalTasks = todos.length;
     const attendedEvents = calendarItems.filter(item => moment(item.end).isBefore(moment())).length;
     const totalEvents = calendarItems.length;
 
     const taskScore = totalTasks > 0 ? (completedTasks / totalTasks) * 50 : 0;
     const eventScore = totalEvents > 0 ? (attendedEvents / totalEvents) * 50 : 0;
 
-    return Math.round(taskScore + eventScore);
-  }, [todoItems, calendarItems]);
+    const score = Math.round(taskScore + eventScore);
+    console.log('productivityScore:', score);
+    return score;
+  }, [todos, calendarItems]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="analytics-dashboard">

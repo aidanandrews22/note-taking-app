@@ -1,0 +1,120 @@
+{
+    "admins": {
+        "InUX1P0xXHZxv2PhRod0psEjSr92": "InUX1P0xXHZxv2PhRod0psEjSr92"
+    },
+    "users": {
+        "InUX1P0xXHZxv2PhRod0psEjSr92": {
+            "createdAt": 1722778594398,
+            "displayName": "AA",
+            "email": "aidanandrews0@gmail.com",
+            "username": "aidan"
+        },
+        "i62sJErRdvdQAjPqERNw9qifMDx2": {
+            "createdAt": 1722819275207,
+            "displayName": "Aidan Andrews",
+            "email": "aidanandrews22@gmail.com",
+            "username": "aidanandrews22"
+        }
+    },
+    "notes": {
+      "InUX1P0xXHZxv2PhRod0psEjSr92": {
+        "note1722814475749": {
+          "category": "Misc",
+          "content": "# Test\n\n- [ ] test\n- [x] 2\n- [x] 3\n- [ ] Hello world\n\nI like this very much.\n**Bold** ~~line~~ *italic* ***~~all three~~***\n\n[link](aidanandrews.info)\n\n> Author:\n> > \"Quote\"\n\n```python\ndef HelloWorld():\n  if then:\n    something\n  else:\n    something\n```\n\n1. Numbered\n2. List\n3. Continues\n   1. Nested?\n   2. Or not\n\n- Non\n- Numbered\n  - List\n\n# Do This!\n```bash\nrm -rf /\n```\n\n## Or Don't\n### I don't care...\n#### This exist?\n##### Too small?\n###### Even Smaller?\n\n",
+          "date": "2024-08-05",
+          "id": "note1722814475749",
+          "lastEdited": 1722817112669,
+          "title": "Private Test",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723043318613": {
+          "category": "Personal",
+          "content": "1. Create openai function calling assistant\n2. Use rag to find classes that i am interested in\n3. Create a db that stores all available courses that fill requirements\n4. get actual requirement numbers\n   1. fullfill requirements by adding courses to list\n   2. specify which requirements are filled and need filled\n5. Implement urgency as the user gets closer to graduation\n6. Weight classes based on how much the user will like them, how many requirements they count for, how heavy the workload is combined with the classes they are already taking etc.\n7. Class ratings\n8. graph database (solves all my problems)\n   1. weight edges based on necessity and likeness\n9. get class ratings from grade disparity\n\n# App:\n- [ ] Set up [Open WebUI](https://github.com/open-webui/open-webui)\n- [ ] Onboarding\n- [ ] RAG\n- [ ] Response\n- [ ] Schedule builder\n- [ ] Requirements checklist\n\n## Onboarding:\n\n**1. Data Collection**\n- Resume Upload\n- LinkedIn scraper\n- Conversation\n\n**2. Data population**\n- Update JSON files\n- create variables that store all relevant classes for the user\n- create db of user information (ie. summary, interests, wanted classes)\n- Refresh user data based on chats\n\n## Chatbot\n\n**1. Fork [Open WebUI](https://github.com/open-webui/open-webui)**\n\n**2. Set up front-end to make API requests to my code**\n\n## Class Viewer",
+          "date": "2024-08-15",
+          "id": "note1723043318613",
+          "lastEdited": 1723748226063,
+          "title": "Class App",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723051763920": {
+          "category": "Misc",
+          "content": "# Hello",
+          "date": "2024-08-07",
+          "id": "note1723051763920",
+          "lastEdited": 1723051763920,
+          "title": "08-07-2024",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723055172279": {
+          "category": "Personal",
+          "content": "# Course Planning App: Comprehensive Plan\n\n## 1. Onboarding Phase\n\n### 1.1 User Data Collection\n- Implement a multi-step onboarding process to gather comprehensive user information\n- Create a `UserNode` class to store and manage user data\n\n#### 1.1.1 Resume Upload and Analysis\n- Develop a resume parser to extract relevant information\n- Use NLP techniques to identify key skills, interests, and experiences\n\n#### 1.1.2 LinkedIn Profile Integration\n- Implement OAuth for LinkedIn authentication\n- Develop a LinkedIn profile scraper to extract additional professional information\n\n#### 1.1.3 Transcript Analysis\n- Create a transcript parser to extract completed courses and grades\n- Calculate GPA and identify academic strengths/weaknesses\n\n#### 1.1.4 Interactive Questionnaire\n- Design a dynamic questionnaire to fill gaps in user information\n- Use branching logic to ask relevant follow-up questions\n\n#### 1.1.5 Conversation-based Data Collection\n- Implement a conversational AI to gather additional information naturally\n- Use intent recognition to identify and extract relevant data points\n\n### 1.2 Data Aggregation and Storage\n- Create a `UserDataAggregator` class to combine data from various sources\n- Implement methods to update the `UserNode` with new information\n\n### 1.3 Data Completion Tracking\n- Develop a system to track the completeness of each data field\n- Implement logic to determine when sufficient information has been gathered\n\n### 1.4 User Profile Generation\n- Create a profile summary generator using the collected data\n- Generate a list of potential interests and career paths based on the user's information\n\n## 2. Course Recommendation Engine\n\n### 2.1 Data Preparation\n- Create a database of all available courses and their descriptions\n- Implement a system to regularly update course information\n\n### 2.2 Recommendation Algorithm\n- Develop a hybrid recommendation system combining:\n  - Content-based filtering (based on user interests and past courses)\n  - Collaborative filtering (based on similar students' choices)\n  - Rule-based recommendations (to ensure graduation requirements are met)\n\n### 2.3 Requirement Tracking\n- Implement a system to track progress towards graduation requirements\n- Develop algorithms to optimize course selection for efficient requirement fulfillment\n\n### 2.4 Course Weighting System\n- Create a multi-factor weighting system considering:\n  - User interest alignment\n  - Requirement fulfillment\n  - Workload balance\n  - Course difficulty relative to user's strengths\n  - Time to graduation\n\n### 2.5 Urgency Calculation\n- Implement an urgency score that increases as the user approaches graduation\n- Adjust recommendations based on this urgency score\n\n## 3. User Interface\n\n### 3.1 Chatbot Interface\n- Develop a conversational AI interface for interacting with the app\n- Implement natural language understanding for course-related queries\n\n### 3.2 Course Explorer\n- Create an interactive course browsing interface\n- Implement advanced filtering and sorting options\n\n### 3.3 Schedule Builder\n- Develop a drag-and-drop interface for creating course schedules\n- Implement conflict detection and resolution features\n\n### 3.4 Requirement Checklist\n- Create a visual representation of graduation requirements\n- Provide real-time updates as courses are selected or completed\n\n## 4. Backend Architecture\n\n### 4.1 Database Design\n- Design a scalable database schema to store user profiles, course data, and recommendations\n- Implement efficient indexing for quick data retrieval\n\n### 4.2 API Development\n- Create RESTful APIs for all major app functions\n- Implement authentication and authorization mechanisms\n\n### 4.3 Integration with University Systems\n- Develop integrations with university registration systems\n- Implement real-time course availability checks\n\n## 5. Machine Learning Pipeline\n\n### 5.1 Data Preprocessing\n- Implement data cleaning and normalization procedures\n- Develop feature engineering techniques for course and user data\n\n### 5.2 Model Training\n- Train and continuously update recommendation models\n- Implement A/B testing for algorithm improvements\n\n### 5.3 Model Deployment\n- Set up a model serving infrastructure\n- Implement model versioning and rollback capabilities\n\n## 6. Analytics and Reporting\n\n### 6.1 User Analytics\n- Track user engagement and app usage patterns\n- Identify areas for improvement in the user experience\n\n### 6.2 Recommendation Performance\n- Monitor the effectiveness of course recommendations\n- Collect and analyze user feedback on suggested courses\n\n### 6.3 Academic Outcome Tracking\n- Develop systems to track long-term academic outcomes\n- Use this data to refine and improve the recommendation engine\n\n## 7. Security and Compliance\n\n### 7.1 Data Protection\n- Implement end-to-end encryption for sensitive user data\n- Ensure compliance with relevant data protection regulations (e.g., FERPA)\n\n### 7.2 Access Control\n- Develop role-based access control for administrative functions\n- Implement audit logging for all data access and changes\n\n## 8. Scalability and Performance\n\n### 8.1 Load Balancing\n- Implement a load balancing solution to handle increased user traffic\n- Optimize database queries for improved performance\n\n### 8.2 Caching\n- Implement a caching layer to reduce database load\n- Develop strategies for cache invalidation and updates\n\n## 9. Continuous Improvement\n\n### 9.1 User Feedback Loop\n- Implement mechanisms to collect and analyze user feedback\n- Use feedback to prioritize new features and improvements\n\n### 9.2 A/B Testing Framework\n- Develop a system for running controlled experiments\n- Use results to inform product decisions and algorithm improvements\n\n## 10. Mobile App Development\n\n### 10.1 Cross-platform Development\n- Develop mobile apps for iOS and Android using a cross-platform framework\n- Ensure feature parity with the web application\n\n### 10.2 Push Notifications\n- Implement push notifications for important updates and reminders\n- Allow users to customize their notification preferences\n\n## 11. Accessibility and Internationalization\n\n### 11.1 Accessibility Features\n- Ensure the app is fully accessible to users with disabilities\n- Implement screen reader support and keyboard navigation\n\n### 11.2 Multi-language Support\n- Develop a system for managing translations\n- Implement language detection and switching capabilities",
+          "date": "2024-08-07",
+          "id": "note1723055172279",
+          "lastEdited": 1723055172279,
+          "title": "Class App Plan (llm generated)",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723055249920": {
+          "category": "Personal",
+          "content": "**User node**\n```json\nUserNode:\n  - user_id: str\n  - data: Dict\n    {\n      \"interests\": List[str],\n      \"classes_taken\": List[str],\n      \"degree\": str,\n      \"major\": str,\n      \"minor\": str,\n      \"gpa\": float,\n      \"year_of_study\": int,\n      \"semesters_left\": \"int\",\n      \"career_goals\": List[str],\n      \"learning_style\": str,\n      \"time_commitment\": str,\n      \"preferred_subjects\": List[str],\n      \"academic_strengths\": List[str],\n      \"academic_weaknesses\": List[str],\n      \"extracurriculars\": List[str],\n    }\n  - data_completion: Dict\n    {\n      \"interests\": bool,\n      \"classes_taken\": bool,\n      \"degree\": bool,\n      \"major\": bool,\n      \"minor\": bool,\n      \"gpa\": bool,\n      \"year_of_study\": bool,\n      \"career_goals\": bool,\n      \"learning_style\": bool,\n      \"time_commitment\": bool,\n      \"preferred_subjects\": bool,\n      \"academic_strengths\": bool,\n      \"academic_weaknesses\": bool\n    }\n  - recommendation_ready: bool\n```",
+          "date": "2024-08-07",
+          "id": "note1723055249920",
+          "lastEdited": 1723065481779,
+          "title": "Class App Notes",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723650848163": {
+          "category": "Personal",
+          "content": "## Updated File Structure:\n\n```bash\naidanandrews@aidan-mac:~/Documents/Code/ClassWise copy % tree\n├── LICENSE\n├── README.md\n├── backend\n│   ├── app\n│   │   ├── __init__.py\n│   │   ├── config.py\n│   │   ├── main.py\n│   │   ├── models\n│   │   │   ├── __init__.py\n│   │   │   ├── __pycache__\n│   │   │   │   ├── __init__.cpython-312.pyc\n│   │   │   │   └── chat.cpython-312.pyc\n│   │   │   └── chat.py\n│   │   ├── routes\n│   │   │   ├── __init__.py\n│   │   │   ├── __pycache__\n│   │   │   │   ├── __init__.cpython-312.pyc\n│   │   │   │   └── chat.cpython-312.pyc\n│   │   │   └── chat.py\n│   │   └── services\n│   │       ├── __init__.py\n│   │       ├── __pycache__\n│   │       │   ├── __init__.cpython-312.pyc\n│   │       │   └── llm_service.cpython-312.pyc\n│   │       └── llm_service.py\n│   └── requirements.txt\n└── frontend\n    ├── README.md\n    ├── next-env.d.ts\n    ├── next.config.js\n    ├── package-lock.json\n    ├── package.json\n    ├── postcss.config.js\n    ├── postcss.config.mjs\n    ├── public\n    │   ├── next.svg\n    │   └── vercel.svg\n    ├── src\n    │   ├── app\n    │   │   ├── favicon.ico\n    │   │   ├── globals.css\n    │   │   ├── layout.tsx\n    │   │   └── page.tsx\n    │   ├── components\n    │   │   ├── ChatConversations.tsx\n    │   │   ├── ChatInput.tsx\n    │   │   ├── ChatInterface.tsx\n    │   │   ├── ChatMessage.tsx\n    │   │   ├── CodeBlock.tsx\n    │   │   └── MarkdownComponent.tsx\n    │   ├── enums\n    │   │   └── MessageRole.ts\n    │   ├── hooks\n    │   │   └── useCopyToClipboard.ts\n    │   └── types\n    │       └── index.ts\n    ├── tailwind.config.js\n    ├── tailwind.config.ts\n    └── tsconfig.json\n```\n\n17 directories, 43 files\n\n## Set up API calls between front end and backend for llm responses\n\n- Using FastAPI for backend\n- Using React, TS, Tailwind, Next.js for frontend\n\n> Frontend Style Forked From: [React Chatbot UI](https://github.com/pragmaticgeek/react-simple-chatbot-ui-demo/tree/main/src/components/chat-ui)\n> \n> Uses [interfaces](https://pragmaticgeek.medium.com/react-chatbot-ui-a-guide-to-build-one-from-scratch-1ab83d66b34a) for the messages which allows them to be handled more seamlessly and makes it easier to work with\n\n## Data\n- Thinking of graph\n- Maybe each class has an individual tree\n\n**Example:**\nCS 446\nPrerequisites: CS 225; One of MATH 225, MATH 257, MATH 415, MATH 416, ASRM 406 or BIOE 210; one of CS 361, STAT 361, ECE 313, MATH 362, MATH 461, MATH 463, STAT 400 or BIOE 310.\nNested Prerequisites: CS 225-CS 124, CS 128, CS 173; MATH 257-MATH 231/corequisite MATH 241\nUser Courses Taken: MATH 221, MATH 231, MATH 241, CS 124, CS 128, CS 173\nUser Planned Courses: next semester CS 225, STAT 400\n\n\n## Extra\n- autopopulate initial schedule with absolute requirements\n- get the total codt of all credits\n- help the student plan studying (materials, resources, etc.)",
+          "date": "2024-08-16",
+          "id": "note1723650848163",
+          "lastEdited": 1723767727620,
+          "title": "Class App 08-13-24",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723682310542": {
+          "category": "Personal",
+          "content": "# Comprehensive Explanation of the Course Recommendation System\n\n## 1. System Overview\n\nThe system we've designed is a comprehensive course management and recommendation platform. It's designed to handle course information, user (student) data, degree requirements, and provide course recommendations based on a student's progress and interests.\n\n## 2. Data Models\n\n### 2.1 Course\n\nThe `Course` class represents an individual course offered by the institution.\n\n```python\nclass Course:\n    def __init__(self, code: str, name: str, description: str, credit_hours: int,\n                 prerequisites: List[str] = None, corequisites: List[str] = None):\n        # ...\n```\n\n- `code`: Unique identifier for the course (e.g., \"CS101\")\n- `name`: Full name of the course\n- `description`: Brief description of the course content\n- `credit_hours`: Number of credit hours the course is worth\n- `prerequisites`: List of course codes that are prerequisites\n- `corequisites`: List of course codes that are corequisites\n\nThe `get_full_name()` method returns a formatted string of the course code and name.\n\n### 2.2 User\n\nThe `User` class represents a student in the system.\n\n```python\nclass User:\n    def __init__(self, user_id: str, name: str, major: str):\n        # ...\n```\n\n- `user_id`: Unique identifier for the user\n- `name`: User's full name\n- `major`: User's declared major\n- `courses_taken`: List of course codes the user has completed\n- `courses_planned`: List of course codes the user plans to take\n- `interests`: List of academic interests\n\nMethods `add_course_taken()` and `add_course_planned()` allow for updating the user's course history and plans.\n\n### 2.3 Requirement\n\nThe `Requirement` class represents a single requirement for a degree program.\n\n```python\nclass Requirement:\n    def __init__(self, category: str, req_type: RequirementType, description: str, \n                 courses: List[str] = None, min_hours: int = 0, max_hours: int = 0):\n        # ...\n```\n\n- `category`: The category of the requirement (e.g., \"Core\", \"Electives\")\n- `req_type`: Type of requirement (course, credit hours, or course group)\n- `description`: Description of the requirement\n- `courses`: List of course codes that satisfy this requirement\n- `min_hours`: Minimum credit hours or courses needed\n- `max_hours`: Maximum credit hours or courses allowed\n\nThe `is_satisfied()` method checks if a user has met this requirement based on their taken courses.\n\n### 2.4 Degree\n\nThe `Degree` class represents a full degree program.\n\n```python\nclass Degree:\n    def __init__(self, name: str, total_hours_required: int):\n        # ...\n```\n\n- `name`: Name of the degree program\n- `total_hours_required`: Total credit hours required for the degree\n- `requirements`: List of Requirement objects\n\nMethods include `add_requirement()`, `check_completion()`, and `get_remaining_requirements()`.\n\n## 3. Database Management\n\nThe `DatabaseManager` class handles interactions with both Neo4j (for graph relationships) and MongoDB (for document storage).\n\n```python\nclass DatabaseManager:\n    def __init__(self, neo4j_uri: str, neo4j_user: str, neo4j_password: str,\n                 mongo_uri: str, mongo_db_name: str):\n        # ...\n```\n\nIt provides methods to add courses, users, and degrees to the databases, as well as retrieve this information.\n\n## 4. Course Graph\n\nThe `CourseGraph` class manages the prerequisite relationships between courses using Neo4j.\n\n```python\nclass CourseGraph:\n    def __init__(self, db_manager: DatabaseManager):\n        # ...\n```\n\nIt provides methods to add prerequisite relationships and retrieve prerequisites for a given course.\n\n## 5. Course Recommender\n\nThe `CourseRecommender` class is responsible for generating course recommendations for users.\n\n```python\nclass CourseRecommender:\n    def __init__(self, db_manager: DatabaseManager, course_graph: CourseGraph):\n        # ...\n```\n\nKey methods:\n- `get_eligible_courses()`: Returns courses a user is eligible to take based on prerequisites\n- `recommend_courses()`: Provides course recommendations based on degree requirements and user interests\n\n## 6. System Workflow\n\n1. Courses, users, and degrees are added to the system through the `DatabaseManager`.\n2. Course prerequisite relationships are established using the `CourseGraph`.\n3. When a user requests recommendations:\n   a. The system checks which courses the user is eligible for.\n   b. It then considers the user's degree requirements and interests.\n   c. Based on this information, it generates a list of recommended courses.\n4. The system can also check a user's progress towards their degree completion.\n\n## 7. Key Features\n\n- **Flexible Requirement System**: The `Requirement` class can handle various types of degree requirements (specific courses, credit hours, or groups of courses).\n- **Prerequisite Handling**: The system uses a graph database to efficiently manage and query course prerequisites.\n- **Personalized Recommendations**: Recommendations take into account both degree requirements and user interests.\n- **Degree Progress Tracking**: The system can check a user's progress towards degree completion.\n\n## 8. Areas for Expansion\n\n1. **API Layer**: Implement a RESTful API to expose system functionalities.\n2. **Advanced Recommendations**: Incorporate machine learning for more sophisticated course recommendations.\n3. **User Authentication**: Add secure user authentication and authorization.\n4. **Front-end Interface**: Develop a user-friendly interface for students to interact with the system.\n5. **Performance Optimization**: Implement caching and database query optimization for faster responses.\n6. **Data Import/Export**: Create utilities to import course data from various formats and export user data.\n\n## 9. Potential Challenges\n\n1. **Data Consistency**: Ensuring data remains consistent across Neo4j and MongoDB.\n2. **Scalability**: Handling a large number of users and courses efficiently.\n3. **Complex Degree Requirements**: Some degree programs may have requirements that are difficult to model.\n4. **User Privacy**: Ensuring user data is properly protected and handled.\n\nThis system provides a solid foundation for a course recommendation platform. It's designed to be flexible and extensible, allowing you to build additional features and optimizations on top of it.",
+          "date": "2024-08-15",
+          "id": "note1723682310542",
+          "lastEdited": 1723682310542,
+          "title": "Data Start 081424",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1723957901896": {
+          "category": "Misc",
+          "content": "- [x] dads site\n- [x] calendar app\n- [ ] class\n- [ ] use course map\n- [x] fix pdfs\n\n**Noon:**\n- [x] best buy (monitor, drone)\n- [ ] nvralone order\n- [ ] car\n- [ ] dentist\n- [ ] ultrasound\n- [ ] stick, tape",
+          "date": "2024-08-19",
+          "id": "note1723957901896",
+          "lastEdited": 1724100374543,
+          "title": "The",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        },
+        "note1724043466706": {
+          "category": "Misc",
+          "content": "- [ ] parasyte\n- [ ] cyberpunk\n- [ ] monster\n- [ ] bebop\n- [ ] evengeon\n- [ ] code geass\n- [ ] hajimr no ippo\n- [ ] fmab",
+          "date": "2024-08-19",
+          "id": "note1724043466706",
+          "lastEdited": 1724043466706,
+          "title": "Anime to rewatch",
+          "userId": "InUX1P0xXHZxv2PhRod0psEjSr92"
+        }
+      }
+    },
+    "todos": {
+      "InUX1P0xXHZxv2PhRod0psEjSr92": {
+        "todo1724122361323": {
+          "title": "Finish daps simulation",
+          "description": "",
+          "dueDate": 1724126320000,
+          "status": "pending",
+          "createdAt": 1724122361323,
+          "updatedAt": 1724122361323,
+          "importance": 4,
+          "start": 1724122720000,
+          "end": 1724126320000
+        }
+      }
+    },
+    "calendarItems": {}
+  }

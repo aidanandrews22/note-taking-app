@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { fetchUserData } from '../services/DataService';
 import { useAuth } from './AuthContext';
 
@@ -6,60 +6,66 @@ const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
   const [notes, setNotes] = useState([]);
+  const [todos, setTodos] = useState([]);
   const [calendarItems, setCalendarItems] = useState([]);
-  const [todoItems, setTodoItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (user) {
-        try {
-          setLoading(true);
-          console.log('Loading data for user:', user.uid);
-          const { notes: fetchedNotes, todos: fetchedTodos } = await fetchUserData(user.uid);
-          console.log('Fetched notes:', fetchedNotes);
-          console.log('Fetched todos:', fetchedTodos);
-          setNotes(fetchedNotes || []);
-          setTodoItems(fetchedTodos || []);
-        } catch (err) {
-          console.error('Error loading data:', err);
-          setError(err.message);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
+  const loadData = useCallback(async () => {
+    if (user) {
+      setLoading(true);
+      setError(null);
+      console.log('Loading data for user:', user.uid);
 
-    loadData();
+      try {
+        const { notes: fetchedNotes, todos: fetchedTodos, calendarItems: fetchedCalendarItems } = await fetchUserData(user.uid);
+        setNotes(fetchedNotes || []);
+        setTodos(fetchedTodos || []);
+        setCalendarItems(fetchedCalendarItems || []);
+        console.log('Loaded todos:', fetchedTodos);
+        console.log('Loaded calendarItems:', fetchedCalendarItems);
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setError(err.message || 'An error occurred while loading data');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Reset data when user logs out
+      setNotes([]);
+      setTodos([]);
+      setCalendarItems([]);
+      setLoading(false);
+      setError(null);
+    }
   }, [user]);
 
-  const updateNotes = (newNotes) => {
-    setNotes(newNotes || []);
-  };
-
-  const updateTodoItems = (newTodoItems) => {
-    setTodoItems(newTodoItems || []);
-  };
-
-  const updateCalendarItems = (newCalendarItems) => {
-    setCalendarItems(newCalendarItems || []);
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   return (
-    <DataContext.Provider value={{ 
-      notes, 
-      todoItems, 
-      loading, 
-      error, 
-      updateNotes, 
-      updateTodoItems,
-      updateCalendarItems
+    <DataContext.Provider value={{
+      notes,
+      todos,
+      calendarItems,
+      loading,
+      error,
+      updateNotes: setNotes,
+      updateTodos: setTodos,
+      updateCalendarItems: setCalendarItems,
+      reloadData: loadData
     }}>
       {children}
     </DataContext.Provider>
   );
 };
 
-export const useDataContext = () => useContext(DataContext);
+export const useDataContext = () => {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error('useDataContext must be used within a DataProvider');
+  }
+  return context;
+};

@@ -11,9 +11,11 @@ import Header from './components/layout/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CalendarItemView from './components/calendar/CalendarItemView';
+import CalendarItemForm from './components/calendar/CalendarItemForm';
 import TodoItemView from './components/todo/TodoItemView';
 import AnalyticsDashboard from './components/common/AnalyticsDashboard.js';
 import { useAuth } from './context/AuthContext';
+import LandingPage from './pages/LandingPage';
 
 const DebugComponent = () => {
   const { user, loading } = useAuth();
@@ -38,6 +40,7 @@ const App = () => {
             <main className="flex-grow container mx-auto px-4 py-4">
               <Routes>
                 <Route path="/signin" element={<SignIn />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route 
                   path="/notes/*" 
                   element={
@@ -90,7 +93,7 @@ const App = () => {
                   path="/calendar/new" 
                   element={
                     <PrivateRoute>
-                      <CalendarItemView />
+                      <CalendarItemForm />
                     </PrivateRoute>
                   } 
                 />
