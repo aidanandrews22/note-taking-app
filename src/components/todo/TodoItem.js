@@ -80,7 +80,7 @@ const TodoItem = ({ todo, onClick }) => {
 
   return (
     <div 
-      className={`todo-item ${editedTodo.status} ${importanceColors[editedTodo.importance]} p-4 border-b cursor-pointer`}
+      className={`todo-item ${editedTodo.status} ${importanceColors[editedTodo.importance]} rounded-lg p-4 cursor-pointer`}
       onClick={() => !isEditing && onClick(todo.id)}
     >
       <div className="flex items-center justify-between">

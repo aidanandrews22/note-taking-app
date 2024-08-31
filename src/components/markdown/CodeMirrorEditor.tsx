@@ -6,11 +6,12 @@ import { EditorView } from '@codemirror/view';
 interface Props {
   initialDoc: string;
   onChange: (doc: string) => void;
-  onHeightChange: (height: number) => void;
+  // onHeightChange: (height: number) => void;
+  editorRef?: React.RefObject<any>;
 }
 
 const CodeMirrorEditor: React.FC<Props> = (props) => {
-  const { onChange, onHeightChange, initialDoc } = props;
+  const { onChange, initialDoc } = props;
   const editorRef = useRef<HTMLDivElement>(null);
   const [editorHeight, setEditorHeight] = useState<number>(300); // Default minimum height
 
@@ -32,7 +33,7 @@ const CodeMirrorEditor: React.FC<Props> = (props) => {
         const height = editorView.scrollDOM.clientHeight;
         if (height !== editorHeight) {
           setEditorHeight(height);
-          onHeightChange(height);
+          // onHeightChange(height);
         }
       };
 
@@ -54,7 +55,7 @@ const CodeMirrorEditor: React.FC<Props> = (props) => {
         resizeObserver.disconnect();
       };
     }
-  }, [editorView, onHeightChange, editorHeight]);
+  }, [editorView, editorHeight]);
 
   return (
     <div 

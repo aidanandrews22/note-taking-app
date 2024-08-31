@@ -6,7 +6,7 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import SignIn from './components/auth/SignIn';
 import Notes from './pages/Notes';
 import TodoList from './components/todo/TodoList';
-import TodoCalendar from './components/calendar/TodoCalendar';
+import CalendarView from './components/calendar/CalendarView';
 import Header from './components/layout/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -77,7 +77,7 @@ const App = () => {
                   path="/calendar" 
                   element={
                     <PrivateRoute>
-                      <TodoCalendar />
+                      <CalendarView />
                     </PrivateRoute>
                   } 
                 />

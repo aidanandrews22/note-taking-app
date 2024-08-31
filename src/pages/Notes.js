@@ -123,7 +123,7 @@ const Notes = ({ isDirectoryOpen, setIsDirectoryOpen }) => {
             {viewMode === 'list' ? (
               <Routes>
                 <Route index element={<NoteList userId={user.uid} isAdmin={isAdmin} />} />
-                <Route path=":noteId" element={<NoteView userId={user.uid} isAdmin={isAdmin} />} />
+                <Route path=":noteId" element={<NoteEdit userId={user.uid} isAdmin={isAdmin} />} />
                 <Route path=":noteId/edit" element={
                   isPreview ? 
                     <Preview doc={allItems.find(n => n.id === location.pathname.split('/')[2])?.content || ''} /> :

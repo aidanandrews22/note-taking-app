@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDataContext } from '../../context/DataContext';
 import { fetchUserData, Note, saveNote } from '../../services/DataService';
@@ -7,24 +7,26 @@ import CodeMirrorEditor from '../markdown/CodeMirrorEditor';
 import Preview from '../markdown/Preview';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
+import debounce from 'lodash/debounce';
+import { X, Save, Eye, Edit2, ChevronLeft, Maximize, Minimize } from 'lucide-react';
 
 interface NoteEditProps {
   userId: string;
   isAdmin: boolean;
-  onTogglePreview: () => void;
 }
 
-const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview }) => {
+const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin }) => {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState<boolean>(false);
-  const [isSideBySide, setIsSideBySide] = useState<boolean>(false);
-  const [contentHeight, setContentHeight] = useState<number>(300);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const { noteId } = useParams<{ noteId: string }>();
   const navigate = useNavigate();
   const { updateNotes } = useDataContext();
+  const editorRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchNote = async () => {
@@ -42,7 +44,6 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
           setLoading(false);
         }
       } else {
-        // Create a new note
         setNote({
           id: '',
           title: '',
@@ -58,31 +59,71 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
   
     fetchNote();
   }, [noteId, userId]);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!note) return;
-    setSaving(true);
-    setError(null);
-  
-    try {
-      const savedNoteId = await saveNote(userId, noteId === 'new' ? null : noteId || null, note);
-      const { notes: updatedNotes } = await fetchUserData(userId);
-      updateNotes(updatedNotes);
-      navigate(`/notes/${savedNoteId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
+
+  const saveNoteDebounced = useCallback(
+    debounce(async (noteToSave: Note) => {
+      setSaving(true);
+      setError(null);
+      try {
+        const savedNoteId = await saveNote(userId, noteToSave.id || null, noteToSave);
+        const { notes: updatedNotes } = await fetchUserData(userId);
+        updateNotes(updatedNotes);
+        if (noteToSave.id === '') {
+          navigate(`/notes/${savedNoteId}`, { replace: true });
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setSaving(false);
+      }
+    }, 1000),
+    [userId, updateNotes, navigate]
+  );
+
+  const handleChange = useCallback((newContent: string) => {
+    setNote(prev => {
+      if (!prev) return null;
+      const updatedNote = { ...prev, content: newContent, lastEdited: Date.now() };
+      saveNoteDebounced(updatedNote);
+      return updatedNote;
+    });
+  }, [saveNoteDebounced]);
+
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNote(prev => {
+      if (!prev) return null;
+      const updatedNote = { ...prev, title: e.target.value, lastEdited: Date.now() };
+      saveNoteDebounced(updatedNote);
+      return updatedNote;
+    });
+  }, [saveNoteDebounced]);
+
+  const handleCategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNote(prev => {
+      if (!prev) return null;
+      const updatedNote = { ...prev, category: e.target.value, lastEdited: Date.now() };
+      saveNoteDebounced(updatedNote);
+      return updatedNote;
+    });
+  }, [saveNoteDebounced]);
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+    if (editorRef.current) {
+      editorRef.current.focus();
     }
   };
 
-  const handleChange = useCallback((newContent: string) => {
-    setNote((prev: Note | null) => prev ? { ...prev, content: newContent } : null);
-  }, []);
-
-  const handleHeightChange = useCallback((height: number) => {
-    setContentHeight(height);
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
   }, []);
 
   if (loading) return <LoadingSpinner />;
@@ -90,79 +131,64 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin, onTogglePreview })
   if (!note) return <ErrorMessage message="Note not found" />;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="title" className="label">Title</label>
+    <div 
+      ref={containerRef}
+      className={`note-edit ${isFullscreen ? 'fixed inset-0 z-50 bg-white overflow-auto' : ''}`}
+    >
+      <div className="bg-white z-10 p-4 border-b">
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={() => navigate(-1)} className="btn btn-ghost">
+            <ChevronLeft size={24} />
+          </button>
+          <div className="flex space-x-2">
+            <button onClick={() => setIsPreview(!isPreview)} className="btn btn-ghost">
+              {isPreview ? <Edit2 size={24} /> : <Eye size={24} />}
+            </button>
+            <button onClick={toggleFullscreen} className="btn btn-ghost">
+              {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
+            </button>
+          </div>
+        </div>
         <input
           type="text"
-          id="title"
-          name="title"
           value={note.title}
-          onChange={(e) => setNote((prev: Note | null) => prev ? { ...prev, title: e.target.value } : null)}
-          className="input"
-          required
+          onChange={handleTitleChange}
+          className="w-full text-4xl font-bold mb-2 p-2 border-b focus:outline-none focus:border-blue-500"
+          placeholder="Note Title"
         />
-      </div>
-      <div>
-        <label htmlFor="category" className="label">Category</label>
-        <select
-          id="category"
-          name="category"
-          value={note.category}
-          onChange={(e) => setNote((prev: Note | null) => prev ? { ...prev, category: e.target.value } : null)}
-          className="input"
-        >
-          <option value="Misc">Misc</option>
-          <option value="Work">Work</option>
-          <option value="Personal">Personal</option>
-        </select>
-      </div>
-      <div className="flex justify-between mb-2">
-        <label htmlFor="content" className="label">Content</label>
-        <div className="space-x-2">
-          <button
-            type="button"
-            onClick={() => setIsSideBySide(!isSideBySide)}
-            className="btn btn-secondary btn-sm"
+        <div className="mb-4">
+          <select
+            value={note.category}
+            onChange={handleCategoryChange}
+            className="p-2 border rounded"
           >
-            {isSideBySide ? 'Single View' : 'Side-by-Side'}
-          </button>
+            <option value="Misc">Misc</option>
+            <option value="Work">Work</option>
+            <option value="Personal">Personal</option>
+          </select>
         </div>
       </div>
-      <div className={`editor-preview-container ${isSideBySide ? 'flex' : ''}`}>
-        <div className={isSideBySide ? 'w-1/2' : 'w-full'}>
-          <CodeMirrorEditor
-            initialDoc={note.content || ''}
-            onChange={handleChange}
-            onHeightChange={handleHeightChange}
-          />
-        </div>
-        {isSideBySide && (
-          <div 
-            className="preview-container w-1/2"
-            style={{ height: `${contentHeight}px`, overflowY: 'auto' }}
-          >
-            <Preview doc={note.content || ''} />
+      <div className="p-4">
+        {isPreview ? (
+          <div className="preview-container w-full">
+            <Preview doc={note.content} />
+          </div>
+        ) : (
+          <div className="w-full">
+            <CodeMirrorEditor
+              initialDoc={note.content}
+              onChange={handleChange}
+              editorRef={editorRef}
+            />
           </div>
         )}
       </div>
-      <div className="flex justify-between mt-4">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="btn btn-secondary"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={saving}
-        >
-          {saving ? 'Saving...' : 'Save Note'}
-        </button>
-      </div>
-    </form>
+      {saving && (
+        <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded">
+          Saving...
+        </div>
+      )}
+    </div>
   );
 };
 
