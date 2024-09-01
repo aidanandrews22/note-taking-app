@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDataContext } from '../../context/DataContext';
-import { fetchUserData, Note, saveNote } from '../../services/DataService';
+import { fetchUserData, Note, saveNote, deleteNote } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
 import CodeMirrorEditor from '../markdown/CodeMirrorEditor';
 import Preview from '../markdown/Preview';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import debounce from 'lodash/debounce';
-import { X, Save, Eye, Edit2, ChevronLeft, Maximize, Minimize } from 'lucide-react';
+import { X, Save, Eye, Edit2, ChevronLeft, Maximize, Minimize, Trash2 } from 'lucide-react';
 
 interface NoteEditProps {
   userId: string;
@@ -24,7 +24,7 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin }) => {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const { noteId } = useParams<{ noteId: string }>();
   const navigate = useNavigate();
-  const { updateNotes } = useDataContext();
+  const { notes, updateNotes } = useDataContext();
   const editorRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -130,6 +130,24 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin }) => {
   if (error) return <ErrorMessage message={error} />;
   if (!note) return <ErrorMessage message="Note not found" />;
 
+  const handleDelete = async () => {
+    if (!noteId) {
+      console.error('Note ID is undefined');
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      try {
+        await deleteNote(userId, noteId);
+        const { notes: updatedNotes } = await fetchUserData(userId);
+        updateNotes(updatedNotes);
+        navigate('/notes');
+      } catch (error) {
+        console.error('Error deleting note:', error);
+      }
+    }
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -180,6 +198,10 @@ const NoteEdit: React.FC<NoteEditProps> = ({ userId, isAdmin }) => {
               onChange={handleChange}
               editorRef={editorRef}
             />
+            <button onClick={handleDelete} className="inline-block bg-red-400 text-white px-4 py-2 rounded hover:bg-red-600 flex items-center mt-4">
+              <Trash2 size={18} className="mr-2" />
+              Delete Note
+            </button>
           </div>
         )}
       </div>

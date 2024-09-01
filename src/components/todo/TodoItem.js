@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useDataContext } from '../../context/DataContext';
 import { saveTodoItem, fetchUserData, deleteTodo } from '../../services/DataService';
 import { useAuth } from '../../context/AuthContext';
-import { Trash2, Edit2, Check, X, Clock, Flag, Tag, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Edit2, Check, X, Clock, Flag, Tag, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import moment from 'moment';
 import SubtaskList from './SubtaskList';
+import { Link } from 'react-router-dom';
 
 const importanceColors = [
   'bg-gray-100',  // Low
@@ -13,11 +14,13 @@ const importanceColors = [
 ];
 
 const TodoItem = ({ todo, onClick }) => {
-  const { updateTodos } = useDataContext();
+  const { updateTodos, notes } = useDataContext();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [editedTodo, setEditedTodo] = useState(todo);
+
+  const relatedNote = notes.find(note => note.id === todo.linkedNoteId);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -175,6 +178,19 @@ const TodoItem = ({ todo, onClick }) => {
             onUpdate={handleSubtasksUpdate}
             parentTodo={editedTodo}
           />
+          {relatedNote && (
+            <div className="mt-2">
+              <h4 className="font-semibold">Related Note:</h4>
+              <Link 
+                to={`/notes/${relatedNote.id}`} 
+                className="flex items-center text-blue-500 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FileText size={16} className="mr-1" />
+                {relatedNote.title}
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
